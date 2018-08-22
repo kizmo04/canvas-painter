@@ -1,7 +1,7 @@
 import _ from 'lodash';
 
 (function() {
-  var socket = new WebSocket('ws://localhost:8080/');
+  var socket = new WebSocket('ws://kizmo04.github.io:8080/');
 
   socket.addEventListener('open', function (event) {
     socket.send('Hello Server!');
