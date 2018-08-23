@@ -2904,12 +2904,11 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
   // Initialize Firebase
   var firebase = __webpack_require__(10);
   var config = {
-    apiKey: "AIzaSyAuKxWcC2D_9-TYo1aqMp6yaJjlkDumTAc",
-    authDomain: "canvas-painter-c49b9.firebaseapp.com",
-    databaseURL: "https://canvas-painter-c49b9.firebaseio.com",
-    projectId: "canvas-painter-c49b9",
-    storageBucket: "canvas-painter-c49b9.appspot.com",
-    messagingSenderId: "688524779337"
+    apiKey: "AIzaSyCzXH4QBu0xFYgwrgChoWBIeAIKiQESsw8",
+    authDomain: "canvas-painter-95627.firebaseapp.com",
+    databaseURL: "https://canvas-painter-95627.firebaseio.com",
+    projectId: "canvas-painter-95627",
+    storageBucket: "canvas-painter-95627.appspot.com",
   };
   firebase.initializeApp(config);
   // var config = {
@@ -2929,11 +2928,45 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
   canvasDataRef = database.ref('canvas');
 
-  canvasDataRef.on('value', snapshot => {
-    canvasData = snapshot.val();
-    console.log(canvasData);
+  function LinePath(context) {
+    this.offsets = {
+      x: [],
+      y: []
+    };
 
-    image.src = canvasData.img;
+    this.context = context;
+  }
+
+  function setPath (pathObj, obj) {
+    var prevX = obj.offsets.x;
+    var prevY = obj.offsets.y;
+
+    for (var i = 0; i < prevX.length - 1; i++) {
+      pathObj.moveTo(prevX[i], prevY[i]);
+      pathObj.lineTo(prevX[i + 1], prevY[i + 1]);
+    }
+    return pathObj;
+  };
+
+  LinePath.prototype.pushOffset = function(x, y) {
+    this.offsets.x.push(x);
+    this.offsets.y.push(y);
+  };
+
+  canvasDataRef.on('value', snapshot => {
+    console.log('database on')
+    canvasData = snapshot.val();
+    if (image.src !== canvasData.img) image.src = canvasData.img;
+    // console.log(snapshot.val())
+    c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
+    for (var key in canvasData.path) {
+      // console.log(typeof JSON.parse(canvasData.path[key]));
+      // var path = new Path2D(canvasData.path[key]);
+      newLinePath = JSON.parse(canvasData.path[key]);
+      console.log(newLinePath)
+      var path = new Path2D();
+      c.stroke(setPath(path, newLinePath));
+    }
   });
 
   var canvas = document.querySelector('#canvas');
@@ -2954,14 +2987,20 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
   image.addEventListener('load', imageLoadHandler);
 
   function imageLoadHandler (e) {
-    canvas.width = e.target.naturalWidth;
-    canvas.height = e.target.naturalHeight;
-    cached.width = e.target.naturalWidth;
-    cached.height = e.target.naturalHeight;
+    if (canvas.width !== e.target.naturalWidth) {
+      canvas.width = e.target.naturalWidth;
+      canvas.height = e.target.naturalHeight;
+      cached.width = e.target.naturalWidth;
+      cached.height = e.target.naturalHeight;
+      c.drawImage(e.target, 0, 0, e.target.naturalWidth, e.target.naturalHeight, 0, 0, canvas.width, canvas.height);
+      canvasConatinerHeight = Math.min(400, canvas.height);
+      canvasConatinerWidth = parseInt(canvasConatinerHeight * e.target.naturalWidth / e.target.naturalHeight);
+    } else {
+      return;
+    }
     // bg.width = e.target.naturalWidth;
     // bg.height = e.target.naturalHeight;
 
-    c.drawImage(e.target, 0, 0, e.target.naturalWidth, e.target.naturalHeight, 0, 0, canvas.width, canvas.height);
     // cachedtx.drawImage(e.target, 0, 0, e.target.naturalWidth, e.target.naturalHeight, 0, 0, canvas.width, canvas.height);
 
 
@@ -2974,9 +3013,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
     // cachedtx.drawImage(e.target, 0, 0, e.target.naturalWidth, e.target.naturalHeight, 0, 0, canvas.width, canvas.height);
     // cachedtx.putImageData(imageData, 0, 0);
 
-    canvasConatinerHeight = Math.min(400, canvas.height);
     // canvasConatinerWidth = canvas.width > 800 ? 800 : canvas.width;
-    canvasConatinerWidth = parseInt(canvasConatinerHeight * e.target.naturalWidth / e.target.naturalHeight);
   }
 
   canvas.addEventListener('dragover', function(e) {
@@ -2986,7 +3023,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
   });
 
   var pushImgData;
-
+  var newLinePath;
   canvas.addEventListener('drop', function(e) {
     e.preventDefault();
     // e.stopPropagation();
@@ -3021,6 +3058,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
   var prevImageData;
   var inScale = 1.1;
   var outScale = 0.9;
+  var offsets = [];
 
 
   function scrollHandler(e) {
@@ -3067,6 +3105,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
   var prevOffsetX, prevOffsetY;
   var currentOffsetX, currentOffsetY;
+  var newPathKey;
 
   canvas.addEventListener('mousemove', function(e) {
     if (mode === 0 && e.buttons === 1) {
@@ -3090,12 +3129,11 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
       newDrawing.moveTo(prevOffsetX,prevOffsetY);
       newDrawing.lineTo(currentOffsetX, currentOffsetY);
+      newLinePath.pushOffset(prevOffsetX, prevOffsetY);
       // console.log(currentOffsetX)
       c.stroke(newDrawing);
-      // pushImgData = canvasDataRef.child('img').push();
-      var dataUrl = canvas.toDataURL('image/png');
+      // var dataUrl = canvas.toDataURL('image/gif');
       // canvas.toDataUrl();
-      canvasDataRef.update({'/img/': dataUrl});
       // cachedtx.stroke(newDrawing);
 
       // newDrawing.moveTo(prevOffsetX * width / image.naturalWidth, prevOffsetY * height / image.naturalHeight);
@@ -3155,6 +3193,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       c.beginPath();
       c.strokeStyle = 'green';
       c.lineWidth = 10;
+      newLinePath = new LinePath();
       // cachedtx.beginPath();
       // cachedtx.strokeStyle = 'green';
       // cachedtx.lineWidth = 10;
@@ -3175,7 +3214,18 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       // c.save();
       c.closePath();
       // cachedtx.closePath();
-      drawings.push(newDrawing);
+      newPathKey = canvasDataRef.child('path').push().key;
+      var updates = {};
+      updates[`/path/${newPathKey}`] = JSON.stringify(newLinePath);
+      updates['foo'] = newPathKey + 'foo-bar';
+      canvasDataRef.update(updates, function(err) {
+        if (err) {
+
+        } else {
+          console.log('update success!')
+        }
+      });
+      // console.log(updates);
       // console.log(drawings)
 
       drawStart = false;
@@ -64757,7 +64807,7 @@ exports = module.exports = __webpack_require__(24)(false);
 
 
 // module
-exports.push([module.i, "/* http://meyerweb.com/eric/tools/css/reset/ \n   v2.0 | 20110126\n   License: none (public domain)\n*/\nhtml,\nbody,\ndiv,\nspan,\napplet,\nobject,\niframe,\nh1,\nh2,\nh3,\nh4,\nh5,\nh6,\np,\nblockquote,\npre,\na,\nabbr,\nacronym,\naddress,\nbig,\ncite,\ncode,\ndel,\ndfn,\nem,\nimg,\nins,\nkbd,\nq,\ns,\nsamp,\nsmall,\nstrike,\nstrong,\nsub,\nsup,\ntt,\nvar,\nb,\nu,\ni,\ncenter,\ndl,\ndt,\ndd,\nol,\nul,\nli,\nfieldset,\nform,\nlabel,\nlegend,\ntable,\ncaption,\ntbody,\ntfoot,\nthead,\ntr,\nth,\ntd,\narticle,\naside,\ncanvas,\ndetails,\nembed,\nfigure,\nfigcaption,\nfooter,\nheader,\nhgroup,\nmenu,\nnav,\noutput,\nruby,\nsection,\nsummary,\ntime,\nmark,\naudio,\nvideo {\n  margin: 0;\n  padding: 0;\n  border: 0;\n  font-size: 100%;\n  font: inherit;\n  vertical-align: baseline;\n}\n/* HTML5 display-role reset for older browsers */\narticle,\naside,\ndetails,\nfigcaption,\nfigure,\nfooter,\nheader,\nhgroup,\nmenu,\nnav,\nsection {\n  display: block;\n}\nbody {\n  line-height: 1;\n}\nol,\nul {\n  list-style: none;\n}\nblockquote,\nq {\n  quotes: none;\n}\nblockquote:before,\nblockquote:after,\nq:before,\nq:after {\n  content: '';\n  content: none;\n}\ntable {\n  border-collapse: collapse;\n  border-spacing: 0;\n}\nbody {\n  width: 100%;\n}\n#source {\n  display: none;\n}\n#canvas-container {\n  margin: 0 auto;\n  margin-top: 100px;\n  text-align: center;\n  width: fit-content;\n}\n#canvas {\n  border: 2px dotted black;\n}\n#cached {\n  border: 2px dotted red;\n}\n#background-cached {\n  display: none;\n}\n", ""]);
+exports.push([module.i, "/* http://meyerweb.com/eric/tools/css/reset/ \n   v2.0 | 20110126\n   License: none (public domain)\n*/\nhtml,\nbody,\ndiv,\nspan,\napplet,\nobject,\niframe,\nh1,\nh2,\nh3,\nh4,\nh5,\nh6,\np,\nblockquote,\npre,\na,\nabbr,\nacronym,\naddress,\nbig,\ncite,\ncode,\ndel,\ndfn,\nem,\nimg,\nins,\nkbd,\nq,\ns,\nsamp,\nsmall,\nstrike,\nstrong,\nsub,\nsup,\ntt,\nvar,\nb,\nu,\ni,\ncenter,\ndl,\ndt,\ndd,\nol,\nul,\nli,\nfieldset,\nform,\nlabel,\nlegend,\ntable,\ncaption,\ntbody,\ntfoot,\nthead,\ntr,\nth,\ntd,\narticle,\naside,\ncanvas,\ndetails,\nembed,\nfigure,\nfigcaption,\nfooter,\nheader,\nhgroup,\nmenu,\nnav,\noutput,\nruby,\nsection,\nsummary,\ntime,\nmark,\naudio,\nvideo {\n  margin: 0;\n  padding: 0;\n  border: 0;\n  font-size: 100%;\n  font: inherit;\n  vertical-align: baseline;\n}\n/* HTML5 display-role reset for older browsers */\narticle,\naside,\ndetails,\nfigcaption,\nfigure,\nfooter,\nheader,\nhgroup,\nmenu,\nnav,\nsection {\n  display: block;\n}\nbody {\n  line-height: 1;\n}\nol,\nul {\n  list-style: none;\n}\nblockquote,\nq {\n  quotes: none;\n}\nblockquote:before,\nblockquote:after,\nq:before,\nq:after {\n  content: '';\n  content: none;\n}\ntable {\n  border-collapse: collapse;\n  border-spacing: 0;\n}\nbody {\n  width: 100%;\n}\n#source {\n  display: none;\n}\n#canvas-container {\n  position: relative;\n  margin: 0 auto;\n  margin-top: 100px;\n  text-align: center;\n  width: fit-content;\n}\n#canvas {\n  border: 2px dotted black;\n}\n#cached {\n  border: 2px dotted red;\n  left: 0;\n  top: 0;\n}\n#background-cached {\n  display: none;\n}\n", ""]);
 
 // exports
 
