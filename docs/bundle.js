@@ -2948,22 +2948,22 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
     return pathObj;
   };
 
-  LinePath.prototype.pushOffset = function(x, y) {
-    this.offsets.x.push(x);
-    this.offsets.y.push(y);
+  function pushOffsets(obj, x, y) {
+    obj.offsets.x.push(x);
+    obj.offsets.y.push(y);
+    return obj;
   };
 
   canvasDataRef.on('value', snapshot => {
     console.log('database on')
     canvasData = snapshot.val();
-    if (image.src !== canvasData.img) image.src = canvasData.img;
+    image.src = canvasData.img;
     // console.log(snapshot.val())
     c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
     for (var key in canvasData.path) {
       // console.log(typeof JSON.parse(canvasData.path[key]));
       // var path = new Path2D(canvasData.path[key]);
       newLinePath = JSON.parse(canvasData.path[key]);
-      console.log(newLinePath)
       var path = new Path2D();
       c.stroke(setPath(path, newLinePath));
     }
@@ -3129,7 +3129,17 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
       newDrawing.moveTo(prevOffsetX,prevOffsetY);
       newDrawing.lineTo(currentOffsetX, currentOffsetY);
-      newLinePath.pushOffset(prevOffsetX, prevOffsetY);
+      pushOffsets(newLinePath, prevOffsetX, prevOffsetY);
+      console.log(newLinePath)
+      var updates = {};
+      updates[`/path/${newPathKey}`] = JSON.stringify(newLinePath);
+      canvasDataRef.update(updates, function(err) {
+        if (err) {
+
+        } else {
+          console.log('update success!')
+        }
+      });
       // console.log(currentOffsetX)
       c.stroke(newDrawing);
       // var dataUrl = canvas.toDataURL('image/gif');
@@ -3194,6 +3204,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       c.strokeStyle = 'green';
       c.lineWidth = 10;
       newLinePath = new LinePath();
+      newPathKey = canvasDataRef.child('path').push().key;
       // cachedtx.beginPath();
       // cachedtx.strokeStyle = 'green';
       // cachedtx.lineWidth = 10;
@@ -3214,17 +3225,16 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       // c.save();
       c.closePath();
       // cachedtx.closePath();
-      newPathKey = canvasDataRef.child('path').push().key;
-      var updates = {};
-      updates[`/path/${newPathKey}`] = JSON.stringify(newLinePath);
-      updates['foo'] = newPathKey + 'foo-bar';
-      canvasDataRef.update(updates, function(err) {
-        if (err) {
+      // newPathKey = canvasDataRef.child('path').push().key;
+      // var updates = {};
+      // updates[`/path/${newPathKey}`] = JSON.stringify(newLinePath);
+      // canvasDataRef.update(updates, function(err) {
+      //   if (err) {
 
-        } else {
-          console.log('update success!')
-        }
-      });
+      //   } else {
+      //     console.log('update success!')
+      //   }
+      // });
       // console.log(updates);
       // console.log(drawings)
 
