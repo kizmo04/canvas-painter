@@ -17,6 +17,12 @@ import _ from 'lodash';
   var imageData;
   var data;
   var drawings = {};
+  var colorMenu = document.querySelector('#menu-container');
+  var strokeColor;
+
+  colorMenu.addEventListener('pointerdown', function(e) {
+    strokeColor = e.target.classList[1];
+  });
 
 
   // Initialize Firebase
@@ -78,8 +84,8 @@ import _ from 'lodash';
       backgroundCanvas.height = e.target.naturalHeight;
       drawingCanvas.width = e.target.naturalWidth;
       drawingCanvas.height = e.target.naturalHeight;
-      c.drawImage(e.target, 0, 0, e.target.naturalWidth, e.target.naturalHeight, 0, 0, canvas.width, canvas.height);
-      canvasConatinerHeight = Math.min(400, canvas.height);
+      c.drawImage(e.target, 0, 0, e.target.naturalWidth, e.target.naturalHeight, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
+      canvasConatinerHeight = Math.min(400, backgroundCanvas.height);
       canvasConatinerWidth = parseInt(canvasConatinerHeight * e.target.naturalWidth / e.target.naturalHeight);
     })
     .then(() => {
@@ -102,8 +108,6 @@ import _ from 'lodash';
     console.log(err);
   });
 
-
-  // on 과 update는 선만 읽는거 따로.
   canvasDataRef.child('path').on('value', snapshot => {
     console.log('database on')
     canvasData = snapshot.val();
@@ -183,10 +187,10 @@ import _ from 'lodash';
       // canvasDataRef.set({img: reader.result});
       image.src = reader.result;
       canvasDataRef.update({ 'img': reader.result });
-      c.clearRect(0, 0, canvas.width, canvas.height);
+      c.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
       // cachedtx.clearRect(0, 0, canvas.width, canvas.height);
 
-      c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
+      c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
       // cachedtx.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
       // prevImageData = c.getImageData(0, 0, canvas.width, canvas.height);
     }, false);
@@ -260,26 +264,29 @@ import _ from 'lodash';
   drawingCanvas.addEventListener('pointermove', function(e) {
     console.log('move')
     if (mode === 0 && e.buttons === 1) {
-      c.clearRect(0, 0, canvas.width, canvas.height);
-      moveX += e.movementX * Math.floor(1 * canvas.width / canvasConatinerWidth);
-      moveY += e.movementY * Math.floor(1 * canvas.height / canvasConatinerHeight);
+      c.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+      moveX += e.movementX * Math.floor(1 * backgroundCanvas.width / canvasConatinerWidth);
+      moveY += e.movementY * Math.floor(1 * backgroundCanvas.height / canvasConatinerHeight);
       if (wasZoomIn === 1) {
-        c.drawImage(image, sourceX - moveX, sourceY - moveY, width, height, 0, 0, canvas.width, canvas.height);
+        c.drawImage(image, sourceX - moveX, sourceY - moveY, width, height, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
       } else if (wasZoomIn === 2) {
-        c.drawImage(image, -sourceX - moveX, -sourceY - moveY, width, height, moveX, moveY, canvas.width, canvas.height);
+        c.drawImage(image, -sourceX - moveX, -sourceY - moveY, width, height, moveX, moveY, backgroundCanvas.width, backgroundCanvas.height);
       } else {
-        c.drawImage(image, -moveX, -moveY, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
+        c.drawImage(image, -moveX, -moveY, image.naturalWidth, image.naturalHeight, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
       }
       // _.forEach(drawings, path => {
       //   c.stroke(path);
       // });
       // prevImageData = c.getImageData(0, 0, canvas.width, canvas.height);
     } else if (mode === 1 && drawStart && e.buttons === 1) {
-      currentOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * canvas.width;
-      currentOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * canvas.height;
+      // currentOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * backgroundCanvas.width;
+      // currentOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * backgroundCanvas.height;
 
-      newDrawing.moveTo(prevOffsetX,prevOffsetY);
-      newDrawing.lineTo(currentOffsetX, currentOffsetY);
+      prevOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * backgroundCanvas.width;
+      prevOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * backgroundCanvas.height;
+
+      // newDrawing.moveTo(prevOffsetX,prevOffsetY);
+      // newDrawing.lineTo(currentOffsetX, currentOffsetY);
       pushOffsets(newLinePath, prevOffsetX, prevOffsetY);
       // console.log(newLinePath)
       var updates = {};
@@ -291,9 +298,9 @@ import _ from 'lodash';
           console.log('update success!')
         }
       });
-      drawings[newPathKey] = newDrawing;
+      // drawings[newPathKey] = newDrawing;
       // console.log(currentOffsetX)
-      d.stroke(newDrawing);
+      // d.stroke(newDrawing);
       // var dataUrl = canvas.toDataURL('image/gif');
       // canvas.toDataUrl();
       // cachedtx.stroke(newDrawing);
@@ -304,11 +311,11 @@ import _ from 'lodash';
       // imageData.crossOrigin = 'Anonymous';
       // cachedtx.putImageData(imageData, 0, 0);
       // cachedtx.stroke(newDrawing);
-      prevOffsetX = currentOffsetX;
-      prevOffsetY = currentOffsetY;
+      // prevOffsetX = currentOffsetX;
+      // prevOffsetY = currentOffsetY;
 
     } else if (mode === 1 && e.buttons === 2) {
-      imageData = c.getImageData(0, 0, canvas.width, canvas.height);
+      imageData = c.getImageData(0, 0, backgroundCanvas.width, backgroundCanvas.height);
       data = imageData.data;
       // imageData.crossOrigin = 'Anonymous'; // trick으로 해결함..
       // console.log(imageData)
@@ -353,18 +360,22 @@ import _ from 'lodash';
       // console.log(newDrawing);
       // c.save();
       d.beginPath();
-      d.strokeStyle = 'green';
+      // d.strokeStyle = 'green';
       d.lineWidth = 10;
       newLinePath = new LinePath({
-        strokeStyle: 'green',
+        strokeStyle: strokeColor,
         lineWidth: 10
       });
       newPathKey = canvasDataRef.child('path').push().key;
       // cachedtx.beginPath();
       // cachedtx.strokeStyle = 'green';
       // cachedtx.lineWidth = 10;
-      prevOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * canvas.width;
-      prevOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * canvas.height;
+      prevOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * backgroundCanvas.width;
+      prevOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * backgroundCanvas.height;
+      // newDrawing.moveTo(prevOffsetX,prevOffsetY);
+      pushOffsets(newLinePath, prevOffsetX, prevOffsetY);
+
+      // drawings[newPathKey] = newDrawing;
       // console.log('canvas', e.offsetX, canvasConatinerWidth, canvas.width, image.width, image.naturalWidth)
       // console.log(canvas.getAttribute('width'))
     }

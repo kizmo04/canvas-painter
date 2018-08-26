@@ -70,8 +70,8 @@ body {
 #canvas {
   border: 2px dotted black;
   // padding: 20px 0;
-  // max-width: 800px;
-  // max-height: 400px;
+  max-width: 800px;
+  max-height: 400px;
   // overflow: hidden;
   // display: inline-block;
   // margin: 0 auto;
@@ -83,10 +83,34 @@ body {
   border: 2px dotted red;
   left: 0;
   top: 0;
-  // max-width: 800px;
-  // max-height: 400px;
+  max-width: 800px;
+  max-height: 400px;
 }
 
-#background-cached {
-  display: none;
+#menu-container {
+  width: max-content;
+  margin: 0 auto;
+}
+
+.menu {
+  width: 50px;
+  height: 50px;
+  display: inline-block;
+  cursor: pointer;
+
+  &:nth-child(1) {
+    background-color: red;
+  }
+  &:nth-child(2) {
+    background-color: blue;
+  }
+  &:nth-child(3) {
+    background-color: green;
+  }
+  &:nth-child(4) {
+    background-color: yellow;
+  }
+  &:nth-child(5) {
+    background-color: black;
+  }
 }
