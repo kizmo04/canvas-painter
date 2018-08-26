@@ -3174,11 +3174,14 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       // });
       // prevImageData = c.getImageData(0, 0, canvas.width, canvas.height);
     } else if (mode === 1 && drawStart && e.buttons === 1) {
-      currentOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * backgroundCanvas.width;
-      currentOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * backgroundCanvas.height;
+      // currentOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * backgroundCanvas.width;
+      // currentOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * backgroundCanvas.height;
 
-      newDrawing.moveTo(prevOffsetX,prevOffsetY);
-      newDrawing.lineTo(currentOffsetX, currentOffsetY);
+      prevOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * backgroundCanvas.width;
+      prevOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * backgroundCanvas.height;
+
+      // newDrawing.moveTo(prevOffsetX,prevOffsetY);
+      // newDrawing.lineTo(currentOffsetX, currentOffsetY);
       pushOffsets(newLinePath, prevOffsetX, prevOffsetY);
       // console.log(newLinePath)
       var updates = {};
@@ -3190,7 +3193,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
           console.log('update success!')
         }
       });
-      drawings[newPathKey] = newDrawing;
+      // drawings[newPathKey] = newDrawing;
       // console.log(currentOffsetX)
       // d.stroke(newDrawing);
       // var dataUrl = canvas.toDataURL('image/gif');
@@ -3203,8 +3206,8 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       // imageData.crossOrigin = 'Anonymous';
       // cachedtx.putImageData(imageData, 0, 0);
       // cachedtx.stroke(newDrawing);
-      prevOffsetX = currentOffsetX;
-      prevOffsetY = currentOffsetY;
+      // prevOffsetX = currentOffsetX;
+      // prevOffsetY = currentOffsetY;
 
     } else if (mode === 1 && e.buttons === 2) {
       imageData = c.getImageData(0, 0, backgroundCanvas.width, backgroundCanvas.height);
@@ -3264,6 +3267,10 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       // cachedtx.lineWidth = 10;
       prevOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * backgroundCanvas.width;
       prevOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * backgroundCanvas.height;
+      // newDrawing.moveTo(prevOffsetX,prevOffsetY);
+      pushOffsets(newLinePath, prevOffsetX, prevOffsetY);
+
+      // drawings[newPathKey] = newDrawing;
       // console.log('canvas', e.offsetX, canvasConatinerWidth, canvas.width, image.width, image.naturalWidth)
       // console.log(canvas.getAttribute('width'))
     }
