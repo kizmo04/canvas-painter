@@ -2977,8 +2977,8 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       backgroundCanvas.height = e.target.naturalHeight;
       drawingCanvas.width = e.target.naturalWidth;
       drawingCanvas.height = e.target.naturalHeight;
-      c.drawImage(e.target, 0, 0, e.target.naturalWidth, e.target.naturalHeight, 0, 0, canvas.width, canvas.height);
-      canvasConatinerHeight = Math.min(400, canvas.height);
+      c.drawImage(e.target, 0, 0, e.target.naturalWidth, e.target.naturalHeight, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
+      canvasConatinerHeight = Math.min(400, backgroundCanvas.height);
       canvasConatinerWidth = parseInt(canvasConatinerHeight * e.target.naturalWidth / e.target.naturalHeight);
     })
     .then(() => {
@@ -3082,10 +3082,10 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       // canvasDataRef.set({img: reader.result});
       image.src = reader.result;
       canvasDataRef.update({ 'img': reader.result });
-      c.clearRect(0, 0, canvas.width, canvas.height);
+      c.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
       // cachedtx.clearRect(0, 0, canvas.width, canvas.height);
 
-      c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
+      c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
       // cachedtx.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
       // prevImageData = c.getImageData(0, 0, canvas.width, canvas.height);
     }, false);
@@ -3159,23 +3159,23 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
   drawingCanvas.addEventListener('pointermove', function(e) {
     console.log('move')
     if (mode === 0 && e.buttons === 1) {
-      c.clearRect(0, 0, canvas.width, canvas.height);
-      moveX += e.movementX * Math.floor(1 * canvas.width / canvasConatinerWidth);
-      moveY += e.movementY * Math.floor(1 * canvas.height / canvasConatinerHeight);
+      c.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+      moveX += e.movementX * Math.floor(1 * backgroundCanvas.width / canvasConatinerWidth);
+      moveY += e.movementY * Math.floor(1 * backgroundCanvas.height / canvasConatinerHeight);
       if (wasZoomIn === 1) {
-        c.drawImage(image, sourceX - moveX, sourceY - moveY, width, height, 0, 0, canvas.width, canvas.height);
+        c.drawImage(image, sourceX - moveX, sourceY - moveY, width, height, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
       } else if (wasZoomIn === 2) {
-        c.drawImage(image, -sourceX - moveX, -sourceY - moveY, width, height, moveX, moveY, canvas.width, canvas.height);
+        c.drawImage(image, -sourceX - moveX, -sourceY - moveY, width, height, moveX, moveY, backgroundCanvas.width, backgroundCanvas.height);
       } else {
-        c.drawImage(image, -moveX, -moveY, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
+        c.drawImage(image, -moveX, -moveY, image.naturalWidth, image.naturalHeight, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
       }
       // _.forEach(drawings, path => {
       //   c.stroke(path);
       // });
       // prevImageData = c.getImageData(0, 0, canvas.width, canvas.height);
     } else if (mode === 1 && drawStart && e.buttons === 1) {
-      currentOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * canvas.width;
-      currentOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * canvas.height;
+      currentOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * backgroundCanvas.width;
+      currentOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * backgroundCanvas.height;
 
       newDrawing.moveTo(prevOffsetX,prevOffsetY);
       newDrawing.lineTo(currentOffsetX, currentOffsetY);
@@ -3192,7 +3192,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       });
       drawings[newPathKey] = newDrawing;
       // console.log(currentOffsetX)
-      d.stroke(newDrawing);
+      // d.stroke(newDrawing);
       // var dataUrl = canvas.toDataURL('image/gif');
       // canvas.toDataUrl();
       // cachedtx.stroke(newDrawing);
@@ -3207,7 +3207,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       prevOffsetY = currentOffsetY;
 
     } else if (mode === 1 && e.buttons === 2) {
-      imageData = c.getImageData(0, 0, canvas.width, canvas.height);
+      imageData = c.getImageData(0, 0, backgroundCanvas.width, backgroundCanvas.height);
       data = imageData.data;
       // imageData.crossOrigin = 'Anonymous'; // trick으로 해결함..
       // console.log(imageData)
@@ -3262,8 +3262,8 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       // cachedtx.beginPath();
       // cachedtx.strokeStyle = 'green';
       // cachedtx.lineWidth = 10;
-      prevOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * canvas.width;
-      prevOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * canvas.height;
+      prevOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * backgroundCanvas.width;
+      prevOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * backgroundCanvas.height;
       // console.log('canvas', e.offsetX, canvasConatinerWidth, canvas.width, image.width, image.naturalWidth)
       // console.log(canvas.getAttribute('width'))
     }
@@ -64890,7 +64890,7 @@ exports = module.exports = __webpack_require__(24)(false);
 
 
 // module
-exports.push([module.i, "/* http://meyerweb.com/eric/tools/css/reset/ \n   v2.0 | 20110126\n   License: none (public domain)\n*/\nhtml,\nbody,\ndiv,\nspan,\napplet,\nobject,\niframe,\nh1,\nh2,\nh3,\nh4,\nh5,\nh6,\np,\nblockquote,\npre,\na,\nabbr,\nacronym,\naddress,\nbig,\ncite,\ncode,\ndel,\ndfn,\nem,\nimg,\nins,\nkbd,\nq,\ns,\nsamp,\nsmall,\nstrike,\nstrong,\nsub,\nsup,\ntt,\nvar,\nb,\nu,\ni,\ncenter,\ndl,\ndt,\ndd,\nol,\nul,\nli,\nfieldset,\nform,\nlabel,\nlegend,\ntable,\ncaption,\ntbody,\ntfoot,\nthead,\ntr,\nth,\ntd,\narticle,\naside,\ncanvas,\ndetails,\nembed,\nfigure,\nfigcaption,\nfooter,\nheader,\nhgroup,\nmenu,\nnav,\noutput,\nruby,\nsection,\nsummary,\ntime,\nmark,\naudio,\nvideo {\n  margin: 0;\n  padding: 0;\n  border: 0;\n  font-size: 100%;\n  font: inherit;\n  vertical-align: baseline;\n}\n/* HTML5 display-role reset for older browsers */\narticle,\naside,\ndetails,\nfigcaption,\nfigure,\nfooter,\nheader,\nhgroup,\nmenu,\nnav,\nsection {\n  display: block;\n}\nbody {\n  line-height: 1;\n}\nol,\nul {\n  list-style: none;\n}\nblockquote,\nq {\n  quotes: none;\n}\nblockquote:before,\nblockquote:after,\nq:before,\nq:after {\n  content: '';\n  content: none;\n}\ntable {\n  border-collapse: collapse;\n  border-spacing: 0;\n}\nbody {\n  width: 100%;\n}\n#source {\n  display: none;\n}\n#canvas-container {\n  position: relative;\n  margin: 0 auto;\n  margin-top: 100px;\n  text-align: center;\n  width: fit-content;\n}\n#canvas {\n  border: 2px dotted black;\n}\n#cached {\n  position: absolute;\n  border: 2px dotted red;\n  left: 0;\n  top: 0;\n}\n#background-cached {\n  display: none;\n}\n", ""]);
+exports.push([module.i, "/* http://meyerweb.com/eric/tools/css/reset/ \n   v2.0 | 20110126\n   License: none (public domain)\n*/\nhtml,\nbody,\ndiv,\nspan,\napplet,\nobject,\niframe,\nh1,\nh2,\nh3,\nh4,\nh5,\nh6,\np,\nblockquote,\npre,\na,\nabbr,\nacronym,\naddress,\nbig,\ncite,\ncode,\ndel,\ndfn,\nem,\nimg,\nins,\nkbd,\nq,\ns,\nsamp,\nsmall,\nstrike,\nstrong,\nsub,\nsup,\ntt,\nvar,\nb,\nu,\ni,\ncenter,\ndl,\ndt,\ndd,\nol,\nul,\nli,\nfieldset,\nform,\nlabel,\nlegend,\ntable,\ncaption,\ntbody,\ntfoot,\nthead,\ntr,\nth,\ntd,\narticle,\naside,\ncanvas,\ndetails,\nembed,\nfigure,\nfigcaption,\nfooter,\nheader,\nhgroup,\nmenu,\nnav,\noutput,\nruby,\nsection,\nsummary,\ntime,\nmark,\naudio,\nvideo {\n  margin: 0;\n  padding: 0;\n  border: 0;\n  font-size: 100%;\n  font: inherit;\n  vertical-align: baseline;\n}\n/* HTML5 display-role reset for older browsers */\narticle,\naside,\ndetails,\nfigcaption,\nfigure,\nfooter,\nheader,\nhgroup,\nmenu,\nnav,\nsection {\n  display: block;\n}\nbody {\n  line-height: 1;\n}\nol,\nul {\n  list-style: none;\n}\nblockquote,\nq {\n  quotes: none;\n}\nblockquote:before,\nblockquote:after,\nq:before,\nq:after {\n  content: '';\n  content: none;\n}\ntable {\n  border-collapse: collapse;\n  border-spacing: 0;\n}\nbody {\n  width: 100%;\n}\n#source {\n  display: none;\n}\n#canvas-container {\n  position: relative;\n  margin: 0 auto;\n  margin-top: 100px;\n  text-align: center;\n  width: fit-content;\n}\n#canvas {\n  border: 2px dotted black;\n  max-width: 800px;\n  max-height: 400px;\n}\n#cached {\n  position: absolute;\n  border: 2px dotted red;\n  left: 0;\n  top: 0;\n  max-width: 800px;\n  max-height: 400px;\n}\n#background-cached {\n  display: none;\n}\n", ""]);
 
 // exports
 
