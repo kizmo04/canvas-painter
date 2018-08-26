@@ -3156,7 +3156,8 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
   var currentOffsetX, currentOffsetY;
   var newPathKey;
 
-  drawingCanvas.addEventListener('mousemove', function(e) {
+  drawingCanvas.addEventListener('pointermove', function(e) {
+    console.log('move')
     if (mode === 0 && e.buttons === 1) {
       c.clearRect(0, 0, canvas.width, canvas.height);
       moveX += e.movementX * Math.floor(1 * canvas.width / canvasConatinerWidth);
@@ -3240,7 +3241,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
   var newDrawing;
   var drawStart = false;
 
-  drawingCanvas.addEventListener('mousedown', function(e) {
+  drawingCanvas.addEventListener('pointerdown', function(e) {
     if (mode === 1 && e.buttons === 1) {
       console.log('mousedown drawing')
       // cachedtx.save();
@@ -3270,7 +3271,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
   });
 
 
-  drawingCanvas.addEventListener('mouseup', function(e) {
+  drawingCanvas.addEventListener('pointerup', function(e) {
     if (mode === 1 && e.button === 0) {
       console.log('mouseup drawing', e.target);
       // c.stroke(newDrawing);
