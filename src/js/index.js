@@ -2,6 +2,22 @@ import _ from 'lodash';
 
 (function() {
 
+  var canvas = document.querySelector('#canvas');
+  var cached = document.querySelector('#cached');
+  // var background = document.querySelector('#background-cached');
+  var canvasConatinerWidth;
+  var canvasConatinerHeight;
+
+  var image = document.querySelector('#source');
+  image.crossOrigin = "Anonymous";
+  // image.setAttribute('crossOrigin', '')
+  var c = canvas.getContext('2d');
+  var cachedtx = cached.getContext('2d');
+  // var bg = background.getContext('2d');
+  var imageData;
+  var data;
+
+
   // Initialize Firebase
   var firebase = require("firebase");
   var config = {
@@ -29,12 +45,8 @@ import _ from 'lodash';
 
   canvasDataRef = database.ref('canvas');
 
-  function LinePath(context) {
-    this.offsets = {
-      x: [],
-      y: []
-    };
-
+  function LinePath (offsets, context) {
+    this.offsets = offsets || {x: [], y: []};
     this.context = context;
   }
 
@@ -47,45 +59,79 @@ import _ from 'lodash';
       pathObj.lineTo(prevX[i + 1], prevY[i + 1]);
     }
     return pathObj;
-  };
+  }
 
-  LinePath.prototype.pushOffset = function(x, y) {
-    this.offsets.x.push(x);
-    this.offsets.y.push(y);
-  };
+  function pushOffsets(obj, x, y) {
+    obj.offsets.x.push(x);
+    obj.offsets.y.push(y);
+    return obj;
+  }
+
+  function init() {
+    canvasDataRef.once('value')
+    .then(snapshot => {
+      // console.log(snapshot)
+      canvasData = snapshot.val();
+      image.src = canvasData.img;
+      // c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
+      loadImage()
+      .then(e => {
+        canvas.width = e.target.naturalWidth;
+        canvas.height = e.target.naturalHeight;
+        cached.width = e.target.naturalWidth;
+        cached.height = e.target.naturalHeight;
+        c.drawImage(e.target, 0, 0, e.target.naturalWidth, e.target.naturalHeight, 0, 0, canvas.width, canvas.height);
+        canvasConatinerHeight = Math.min(400, canvas.height);
+        canvasConatinerWidth = parseInt(canvasConatinerHeight * e.target.naturalWidth / e.target.naturalHeight);
+      })
+      .then(() => {
+        for (var key in canvasData.path) {
+          var path = new Path2D();
+          c.beginPath();
+          c.strokeStyle = 'green';
+          c.lineWidth = 10;
+          newLinePath = JSON.parse(canvasData.path[key]);
+          c.stroke(setPath(path, newLinePath));
+          c.closePath();
+        }
+      })
+      .catch(err => {
+        console.log(err);
+      });
+    })
+    .catch(err => {
+      console.log(err);
+    });
+  }
+
+  init();
 
   canvasDataRef.on('value', snapshot => {
     console.log('database on')
+    console.log(snapshot)
     canvasData = snapshot.val();
-    if (image.src !== canvasData.img) image.src = canvasData.img;
+    image.src = canvasData.img;
     // console.log(snapshot.val())
-    c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
+    // c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
     for (var key in canvasData.path) {
       // console.log(typeof JSON.parse(canvasData.path[key]));
       // var path = new Path2D(canvasData.path[key]);
       newLinePath = JSON.parse(canvasData.path[key]);
-      console.log(newLinePath)
       var path = new Path2D();
       c.stroke(setPath(path, newLinePath));
+      drawings.push(path);
     }
   });
 
-  var canvas = document.querySelector('#canvas');
-  var cached = document.querySelector('#cached');
-  // var background = document.querySelector('#background-cached');
-  var canvasConatinerWidth;
-  var canvasConatinerHeight;
+  function loadImage () {
+    return new Promise((resolve, reject) => {
+      image.onload = resolve;
+    });
+  }
 
-  var image = document.querySelector('#source');
-  image.crossOrigin = "Anonymous";
-  // image.setAttribute('crossOrigin', '')
-  var c = canvas.getContext('2d');
-  var cachedtx = cached.getContext('2d');
-  // var bg = background.getContext('2d');
-  var imageData;
-  var data;
 
-  image.addEventListener('load', imageLoadHandler);
+
+  // image.addEventListener('load', imageLoadHandler);
 
   function imageLoadHandler (e) {
     if (canvas.width !== e.target.naturalWidth) {
@@ -220,9 +266,9 @@ import _ from 'lodash';
       } else {
         c.drawImage(image, -moveX, -moveY, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
       }
-      _.forEach(drawings, path => {
-        c.stroke(path);
-      });
+      // _.forEach(drawings, path => {
+      //   c.stroke(path);
+      // });
       // prevImageData = c.getImageData(0, 0, canvas.width, canvas.height);
     } else if (mode === 1 && drawStart && e.buttons === 1) {
       currentOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * canvas.width;
@@ -230,7 +276,17 @@ import _ from 'lodash';
 
       newDrawing.moveTo(prevOffsetX,prevOffsetY);
       newDrawing.lineTo(currentOffsetX, currentOffsetY);
-      newLinePath.pushOffset(prevOffsetX, prevOffsetY);
+      pushOffsets(newLinePath, prevOffsetX, prevOffsetY);
+      // console.log(newLinePath)
+      var updates = {};
+      updates[`/path/${newPathKey}`] = JSON.stringify(newLinePath);
+      canvasDataRef.update(updates, function(err) {
+        if (err) {
+
+        } else {
+          console.log('update success!')
+        }
+      });
       // console.log(currentOffsetX)
       c.stroke(newDrawing);
       // var dataUrl = canvas.toDataURL('image/gif');
@@ -295,6 +351,7 @@ import _ from 'lodash';
       c.strokeStyle = 'green';
       c.lineWidth = 10;
       newLinePath = new LinePath();
+      newPathKey = canvasDataRef.child('path').push().key;
       // cachedtx.beginPath();
       // cachedtx.strokeStyle = 'green';
       // cachedtx.lineWidth = 10;
@@ -315,17 +372,16 @@ import _ from 'lodash';
       // c.save();
       c.closePath();
       // cachedtx.closePath();
-      newPathKey = canvasDataRef.child('path').push().key;
-      var updates = {};
-      updates[`/path/${newPathKey}`] = JSON.stringify(newLinePath);
-      updates['foo'] = newPathKey + 'foo-bar';
-      canvasDataRef.update(updates, function(err) {
-        if (err) {
+      // newPathKey = canvasDataRef.child('path').push().key;
+      // var updates = {};
+      // updates[`/path/${newPathKey}`] = JSON.stringify(newLinePath);
+      // canvasDataRef.update(updates, function(err) {
+      //   if (err) {
 
-        } else {
-          console.log('update success!')
-        }
-      });
+      //   } else {
+      //     console.log('update success!')
+      //   }
+      // });
       // console.log(updates);
       // console.log(drawings)
 
