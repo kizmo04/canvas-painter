@@ -2916,6 +2916,12 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
   var imageData;
   var data;
   var drawings = {};
+  var colorMenu = document.querySelector('#menu-container');
+  var strokeColor;
+
+  colorMenu.addEventListener('pointerdown', function(e) {
+    strokeColor = e.target.classList[1];
+  });
 
 
   // Initialize Firebase
@@ -3001,8 +3007,6 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
     console.log(err);
   });
 
-
-  // on 과 update는 선만 읽는거 따로.
   canvasDataRef.child('path').on('value', snapshot => {
     console.log('database on')
     canvasData = snapshot.val();
@@ -3255,10 +3259,10 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       // console.log(newDrawing);
       // c.save();
       d.beginPath();
-      d.strokeStyle = 'green';
+      // d.strokeStyle = 'green';
       d.lineWidth = 10;
       newLinePath = new LinePath({
-        strokeStyle: 'green',
+        strokeStyle: strokeColor,
         lineWidth: 10
       });
       newPathKey = canvasDataRef.child('path').push().key;
@@ -64897,7 +64901,7 @@ exports = module.exports = __webpack_require__(24)(false);
 
 
 // module
-exports.push([module.i, "/* http://meyerweb.com/eric/tools/css/reset/ \n   v2.0 | 20110126\n   License: none (public domain)\n*/\nhtml,\nbody,\ndiv,\nspan,\napplet,\nobject,\niframe,\nh1,\nh2,\nh3,\nh4,\nh5,\nh6,\np,\nblockquote,\npre,\na,\nabbr,\nacronym,\naddress,\nbig,\ncite,\ncode,\ndel,\ndfn,\nem,\nimg,\nins,\nkbd,\nq,\ns,\nsamp,\nsmall,\nstrike,\nstrong,\nsub,\nsup,\ntt,\nvar,\nb,\nu,\ni,\ncenter,\ndl,\ndt,\ndd,\nol,\nul,\nli,\nfieldset,\nform,\nlabel,\nlegend,\ntable,\ncaption,\ntbody,\ntfoot,\nthead,\ntr,\nth,\ntd,\narticle,\naside,\ncanvas,\ndetails,\nembed,\nfigure,\nfigcaption,\nfooter,\nheader,\nhgroup,\nmenu,\nnav,\noutput,\nruby,\nsection,\nsummary,\ntime,\nmark,\naudio,\nvideo {\n  margin: 0;\n  padding: 0;\n  border: 0;\n  font-size: 100%;\n  font: inherit;\n  vertical-align: baseline;\n}\n/* HTML5 display-role reset for older browsers */\narticle,\naside,\ndetails,\nfigcaption,\nfigure,\nfooter,\nheader,\nhgroup,\nmenu,\nnav,\nsection {\n  display: block;\n}\nbody {\n  line-height: 1;\n}\nol,\nul {\n  list-style: none;\n}\nblockquote,\nq {\n  quotes: none;\n}\nblockquote:before,\nblockquote:after,\nq:before,\nq:after {\n  content: '';\n  content: none;\n}\ntable {\n  border-collapse: collapse;\n  border-spacing: 0;\n}\nbody {\n  width: 100%;\n}\n#source {\n  display: none;\n}\n#canvas-container {\n  position: relative;\n  margin: 0 auto;\n  margin-top: 100px;\n  text-align: center;\n  width: fit-content;\n}\n#canvas {\n  border: 2px dotted black;\n  max-width: 800px;\n  max-height: 400px;\n}\n#cached {\n  position: absolute;\n  border: 2px dotted red;\n  left: 0;\n  top: 0;\n  max-width: 800px;\n  max-height: 400px;\n}\n#background-cached {\n  display: none;\n}\n", ""]);
+exports.push([module.i, "/* http://meyerweb.com/eric/tools/css/reset/ \n   v2.0 | 20110126\n   License: none (public domain)\n*/\nhtml,\nbody,\ndiv,\nspan,\napplet,\nobject,\niframe,\nh1,\nh2,\nh3,\nh4,\nh5,\nh6,\np,\nblockquote,\npre,\na,\nabbr,\nacronym,\naddress,\nbig,\ncite,\ncode,\ndel,\ndfn,\nem,\nimg,\nins,\nkbd,\nq,\ns,\nsamp,\nsmall,\nstrike,\nstrong,\nsub,\nsup,\ntt,\nvar,\nb,\nu,\ni,\ncenter,\ndl,\ndt,\ndd,\nol,\nul,\nli,\nfieldset,\nform,\nlabel,\nlegend,\ntable,\ncaption,\ntbody,\ntfoot,\nthead,\ntr,\nth,\ntd,\narticle,\naside,\ncanvas,\ndetails,\nembed,\nfigure,\nfigcaption,\nfooter,\nheader,\nhgroup,\nmenu,\nnav,\noutput,\nruby,\nsection,\nsummary,\ntime,\nmark,\naudio,\nvideo {\n  margin: 0;\n  padding: 0;\n  border: 0;\n  font-size: 100%;\n  font: inherit;\n  vertical-align: baseline;\n}\n/* HTML5 display-role reset for older browsers */\narticle,\naside,\ndetails,\nfigcaption,\nfigure,\nfooter,\nheader,\nhgroup,\nmenu,\nnav,\nsection {\n  display: block;\n}\nbody {\n  line-height: 1;\n}\nol,\nul {\n  list-style: none;\n}\nblockquote,\nq {\n  quotes: none;\n}\nblockquote:before,\nblockquote:after,\nq:before,\nq:after {\n  content: '';\n  content: none;\n}\ntable {\n  border-collapse: collapse;\n  border-spacing: 0;\n}\nbody {\n  width: 100%;\n}\n#source {\n  display: none;\n}\n#canvas-container {\n  position: relative;\n  margin: 0 auto;\n  margin-top: 100px;\n  text-align: center;\n  width: fit-content;\n}\n#canvas {\n  border: 2px dotted black;\n  max-width: 800px;\n  max-height: 400px;\n}\n#cached {\n  position: absolute;\n  border: 2px dotted red;\n  left: 0;\n  top: 0;\n  max-width: 800px;\n  max-height: 400px;\n}\n#menu-container {\n  width: max-content;\n  margin: 0 auto;\n}\n.menu {\n  width: 50px;\n  height: 50px;\n  display: inline-block;\n  cursor: pointer;\n}\n.menu:nth-child(1) {\n  background-color: red;\n}\n.menu:nth-child(2) {\n  background-color: blue;\n}\n.menu:nth-child(3) {\n  background-color: green;\n}\n.menu:nth-child(4) {\n  background-color: yellow;\n}\n.menu:nth-child(5) {\n  background-color: black;\n}\n", ""]);
 
 // exports
 
