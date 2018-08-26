@@ -2901,6 +2901,23 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 (function() {
 
+  var backgroundCanvas = document.querySelector('#canvas');
+  var drawingCanvas = document.querySelector('#cached');
+  // var background = document.querySelector('#background-cached');
+  var canvasConatinerWidth;
+  var canvasConatinerHeight;
+
+  var image = document.querySelector('#source');
+  image.crossOrigin = "Anonymous";
+  // image.setAttribute('crossOrigin', '')
+  var c = backgroundCanvas.getContext('2d');
+  var d = drawingCanvas.getContext('2d');
+  // var bg = background.getContext('2d');
+  var imageData;
+  var data;
+  var drawings = {};
+
+
   // Initialize Firebase
   var firebase = __webpack_require__(10);
   var config = {
@@ -2926,97 +2943,130 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
   var canvasDataRef;
   var canvasData;
 
-  canvasDataRef = database.ref('canvas');
-
-  function LinePath(context) {
-    this.offsets = {
-      x: [],
-      y: []
-    };
-
+  function LinePath (context, offsets) {
+    this.offsets = offsets || [];
     this.context = context;
   }
 
   function setPath (pathObj, obj) {
-    var prevX = obj.offsets.x;
-    var prevY = obj.offsets.y;
-
-    for (var i = 0; i < prevX.length - 1; i++) {
-      pathObj.moveTo(prevX[i], prevY[i]);
-      pathObj.lineTo(prevX[i + 1], prevY[i + 1]);
+    var offsets = obj.offsets;
+    d.strokeStyle = obj.context.strokeStyle;
+    d.lineWidth = obj.context.lineWidth;
+    for (var i = 0; i < offsets.length - 1; i++) {
+      pathObj.moveTo(offsets[i].x, offsets[i].y);
+      pathObj.lineTo(offsets[i + 1].x, offsets[i + 1].y);
     }
     return pathObj;
-  };
+  }
 
   function pushOffsets(obj, x, y) {
-    obj.offsets.x.push(x);
-    obj.offsets.y.push(y);
+    obj.offsets.push({x: x, y: y});
     return obj;
-  };
+  }
 
-  canvasDataRef.on('value', snapshot => {
-    console.log('database on')
+  canvasDataRef = database.ref('canvas');
+
+  canvasDataRef.once('value')
+  .then(snapshot => {
     canvasData = snapshot.val();
     image.src = canvasData.img;
-    // console.log(snapshot.val())
-    c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
-    for (var key in canvasData.path) {
-      // console.log(typeof JSON.parse(canvasData.path[key]));
-      // var path = new Path2D(canvasData.path[key]);
-      newLinePath = JSON.parse(canvasData.path[key]);
-      var path = new Path2D();
-      c.stroke(setPath(path, newLinePath));
-    }
-  });
-
-  var canvas = document.querySelector('#canvas');
-  var cached = document.querySelector('#cached');
-  // var background = document.querySelector('#background-cached');
-  var canvasConatinerWidth;
-  var canvasConatinerHeight;
-
-  var image = document.querySelector('#source');
-  image.crossOrigin = "Anonymous";
-  // image.setAttribute('crossOrigin', '')
-  var c = canvas.getContext('2d');
-  var cachedtx = cached.getContext('2d');
-  // var bg = background.getContext('2d');
-  var imageData;
-  var data;
-
-  image.addEventListener('load', imageLoadHandler);
-
-  function imageLoadHandler (e) {
-    if (canvas.width !== e.target.naturalWidth) {
-      canvas.width = e.target.naturalWidth;
-      canvas.height = e.target.naturalHeight;
-      cached.width = e.target.naturalWidth;
-      cached.height = e.target.naturalHeight;
+    // c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
+    loadImage()
+    .then(e => {
+      backgroundCanvas.width = e.target.naturalWidth;
+      backgroundCanvas.height = e.target.naturalHeight;
+      drawingCanvas.width = e.target.naturalWidth;
+      drawingCanvas.height = e.target.naturalHeight;
       c.drawImage(e.target, 0, 0, e.target.naturalWidth, e.target.naturalHeight, 0, 0, canvas.width, canvas.height);
       canvasConatinerHeight = Math.min(400, canvas.height);
       canvasConatinerWidth = parseInt(canvasConatinerHeight * e.target.naturalWidth / e.target.naturalHeight);
-    } else {
-      return;
+    })
+    .then(() => {
+      d.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+      for (var key in canvasData.path) {
+        var path = new Path2D();
+        d.beginPath();
+        newLinePath = JSON.parse(canvasData.path[key]);
+        path = setPath(path, newLinePath);
+        d.stroke(path);
+        drawings[key] = path;
+        d.closePath();
+      }
+    })
+    .catch(err => {
+      console.log(err);
+    });
+  })
+  .catch(err => {
+    console.log(err);
+  });
+
+
+  // on 과 update는 선만 읽는거 따로.
+  canvasDataRef.child('path').on('value', snapshot => {
+    console.log('database on')
+    canvasData = snapshot.val();
+    // image.src = canvasData.img;
+    // c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
+    d.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+    drawings = {};
+    for (var key in canvasData) {
+      // console.log(typeof JSON.parse(canvasData.path[key]));
+      // var path = new Path2D(canvasData.path[key]);
+      var path = new Path2D();
+      d.beginPath();
+      newLinePath = JSON.parse(canvasData[key]);
+      path = setPath(path, newLinePath);
+      d.stroke(path);
+      drawings[key] = path;
+      d.closePath();
     }
-    // bg.width = e.target.naturalWidth;
-    // bg.height = e.target.naturalHeight;
+    console.log('pathon done')
+  });
 
-    // cachedtx.drawImage(e.target, 0, 0, e.target.naturalWidth, e.target.naturalHeight, 0, 0, canvas.width, canvas.height);
+  canvasDataRef.child('img').on('value', snapshot => {
+    console.log('database img on')
+    canvasData = snapshot.val();
+    image.src = canvasData;
+    // c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
+    loadImage()
+    .then(e => {
+      backgroundCanvas.width = e.target.naturalWidth;
+      backgroundCanvas.height = e.target.naturalHeight;
+      drawingCanvas.width = e.target.naturalWidth;
+      drawingCanvas.height = e.target.naturalHeight;
+      c.drawImage(e.target, 0, 0, e.target.naturalWidth, e.target.naturalHeight, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
+      canvasConatinerHeight = Math.min(400, backgroundCanvas.height);
+      canvasConatinerWidth = parseInt(canvasConatinerHeight * e.target.naturalWidth / e.target.naturalHeight);
+    })
+    .then(() => {
+      canvasDataRef.child('path').once('value')
+      .then(snapshot => {
+        canvasData = snapshot.val();
+        for (var key in canvasData) {
+          var path = new Path2D();
+          d.beginPath();
+          newLinePath = JSON.parse(canvasData[key]);
+          path = setPath(path, newLinePath);
+          d.stroke(drawings[key]);
+          d.closePath();
+          drawings[key] = path;
+        }
+      })
+      // d.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+    })
+    .catch(err => {
+      console.log(err);
+    });
+  });
 
-
-    // imageData = c.getImageData(0, 0, canvas.width, canvas.height);
-    // data = imageData.data;
-    // for (var i = 0; i < data.length; i += 4) {
-    //   data[i + 3] = 100;
-    // }
-    // console.log(imageData)
-    // cachedtx.drawImage(e.target, 0, 0, e.target.naturalWidth, e.target.naturalHeight, 0, 0, canvas.width, canvas.height);
-    // cachedtx.putImageData(imageData, 0, 0);
-
-    // canvasConatinerWidth = canvas.width > 800 ? 800 : canvas.width;
+  function loadImage () {
+    return new Promise((resolve, reject) => {
+      image.onload = resolve;
+    });
   }
 
-  canvas.addEventListener('dragover', function(e) {
+  drawingCanvas.addEventListener('dragover', function(e) {
     e.preventDefault();
     // e.stopPropagation();
     e.dataTransfer.dropEffect = 'copy';
@@ -3024,15 +3074,14 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
   var pushImgData;
   var newLinePath;
-  canvas.addEventListener('drop', function(e) {
+  drawingCanvas.addEventListener('drop', function(e) {
     e.preventDefault();
     // e.stopPropagation();
     var reader = new FileReader();
     reader.addEventListener("load", function () {
-      canvasDataRef.set({img: reader.result});
+      // canvasDataRef.set({img: reader.result});
       image.src = reader.result;
-      pushImgData = canvasDataRef.child('img').push();
-      canvasDataRef.update({'/img/': reader.result});
+      canvasDataRef.update({ 'img': reader.result });
       c.clearRect(0, 0, canvas.width, canvas.height);
       // cachedtx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -3107,7 +3156,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
   var currentOffsetX, currentOffsetY;
   var newPathKey;
 
-  canvas.addEventListener('mousemove', function(e) {
+  drawingCanvas.addEventListener('mousemove', function(e) {
     if (mode === 0 && e.buttons === 1) {
       c.clearRect(0, 0, canvas.width, canvas.height);
       moveX += e.movementX * Math.floor(1 * canvas.width / canvasConatinerWidth);
@@ -3119,9 +3168,9 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       } else {
         c.drawImage(image, -moveX, -moveY, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
       }
-      __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.forEach(drawings, path => {
-        c.stroke(path);
-      });
+      // _.forEach(drawings, path => {
+      //   c.stroke(path);
+      // });
       // prevImageData = c.getImageData(0, 0, canvas.width, canvas.height);
     } else if (mode === 1 && drawStart && e.buttons === 1) {
       currentOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * canvas.width;
@@ -3130,7 +3179,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       newDrawing.moveTo(prevOffsetX,prevOffsetY);
       newDrawing.lineTo(currentOffsetX, currentOffsetY);
       pushOffsets(newLinePath, prevOffsetX, prevOffsetY);
-      console.log(newLinePath)
+      // console.log(newLinePath)
       var updates = {};
       updates[`/path/${newPathKey}`] = JSON.stringify(newLinePath);
       canvasDataRef.update(updates, function(err) {
@@ -3140,8 +3189,9 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
           console.log('update success!')
         }
       });
+      drawings[newPathKey] = newDrawing;
       // console.log(currentOffsetX)
-      c.stroke(newDrawing);
+      d.stroke(newDrawing);
       // var dataUrl = canvas.toDataURL('image/gif');
       // canvas.toDataUrl();
       // cachedtx.stroke(newDrawing);
@@ -3190,7 +3240,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
   var newDrawing;
   var drawStart = false;
 
-  canvas.addEventListener('mousedown', function(e) {
+  drawingCanvas.addEventListener('mousedown', function(e) {
     if (mode === 1 && e.buttons === 1) {
       console.log('mousedown drawing')
       // cachedtx.save();
@@ -3200,10 +3250,13 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       drawStart = true;
       // console.log(newDrawing);
       // c.save();
-      c.beginPath();
-      c.strokeStyle = 'green';
-      c.lineWidth = 10;
-      newLinePath = new LinePath();
+      d.beginPath();
+      d.strokeStyle = 'green';
+      d.lineWidth = 10;
+      newLinePath = new LinePath({
+        strokeStyle: 'green',
+        lineWidth: 10
+      });
       newPathKey = canvasDataRef.child('path').push().key;
       // cachedtx.beginPath();
       // cachedtx.strokeStyle = 'green';
@@ -3216,14 +3269,13 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
   });
 
-  var drawings = [];
 
-  canvas.addEventListener('mouseup', function(e) {
+  drawingCanvas.addEventListener('mouseup', function(e) {
     if (mode === 1 && e.button === 0) {
       console.log('mouseup drawing', e.target);
       // c.stroke(newDrawing);
       // c.save();
-      c.closePath();
+      d.closePath();
       // cachedtx.closePath();
       // newPathKey = canvasDataRef.child('path').push().key;
       // var updates = {};
@@ -3240,25 +3292,45 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
       drawStart = false;
     } else if (mode === 2 && e.button === 0) {
-      drawings = __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.filter(drawings, path => !c.isPointInStroke(path, (parseInt(e.offsetX) / canvasConatinerWidth) * canvas.width, (parseInt(e.offsetY) / canvasConatinerHeight) * canvas.height)
-      );
+      // drawings = await canvasDataRef.child('path').once('value');
+      // drawings = drawings.val();
 
-      c.clearRect(0, 0, canvas.width, canvas.height);
-      if (wasZoomIn === 1) {
-        c.drawImage(image, sourceX - moveX, sourceY - moveY, width, height, 0, 0, canvas.width, canvas.height);
-      } else if (wasZoomIn === 2) {
-        c.drawImage(image, -sourceX - moveX, -sourceY - moveY, width, height, moveX, moveY, canvas.width, canvas.height);
-      } else {
-        c.drawImage(image, -moveX, -moveY, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
+      for (var key in drawings) {
+        if (d.isPointInStroke(drawings[key], (parseInt(e.offsetX) / canvasConatinerWidth) * drawingCanvas.width, (parseInt(e.offsetY) / canvasConatinerHeight) * drawingCanvas.height)) {
+          canvasDataRef.child(`path/${key}`).remove();
+        }
       }
+      // console.log(drawings)
+
+      // drawings = _.filter(drawings, path => !c.isPointInStroke(path, (parseInt(e.offsetX) / canvasConatinerWidth) * canvas.width, (parseInt(e.offsetY) / canvasConatinerHeight) * canvas.height)
+      // );
+
+      // c.clearRect(0, 0, canvas.width, canvas.height);
+      // if (wasZoomIn === 1) {
+      //   c.drawImage(image, sourceX - moveX, sourceY - moveY, width, height, 0, 0, canvas.width, canvas.height);
+      // } else if (wasZoomIn === 2) {
+      //   c.drawImage(image, -sourceX - moveX, -sourceY - moveY, width, height, moveX, moveY, canvas.width, canvas.height);
+      // } else {
+      //   c.drawImage(image, -moveX, -moveY, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
+      // }
       // c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
-      __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.forEach(drawings, path => {
-        c.stroke(path);
-      });
+      // _.forEach(drawings, path => {
+      //   c.stroke(path);
+      // });
       // imageData = c.getImageData(0, 0, canvas.width, canvas.heigth);
       // cachedtx.putImageData(imageData, 0, 0);
     }
   });
+
+  function isPointInPath(path, x, y) {
+    path = JSON.parse(path);
+    for (var i = 0; i < path.offsets.length; i++) {
+      if (path.offsets[i].x === x && path.offsets[i].y === y) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   window.addEventListener('contextmenu', function (e) {
     e.preventDefault();
@@ -64817,7 +64889,7 @@ exports = module.exports = __webpack_require__(24)(false);
 
 
 // module
-exports.push([module.i, "/* http://meyerweb.com/eric/tools/css/reset/ \n   v2.0 | 20110126\n   License: none (public domain)\n*/\nhtml,\nbody,\ndiv,\nspan,\napplet,\nobject,\niframe,\nh1,\nh2,\nh3,\nh4,\nh5,\nh6,\np,\nblockquote,\npre,\na,\nabbr,\nacronym,\naddress,\nbig,\ncite,\ncode,\ndel,\ndfn,\nem,\nimg,\nins,\nkbd,\nq,\ns,\nsamp,\nsmall,\nstrike,\nstrong,\nsub,\nsup,\ntt,\nvar,\nb,\nu,\ni,\ncenter,\ndl,\ndt,\ndd,\nol,\nul,\nli,\nfieldset,\nform,\nlabel,\nlegend,\ntable,\ncaption,\ntbody,\ntfoot,\nthead,\ntr,\nth,\ntd,\narticle,\naside,\ncanvas,\ndetails,\nembed,\nfigure,\nfigcaption,\nfooter,\nheader,\nhgroup,\nmenu,\nnav,\noutput,\nruby,\nsection,\nsummary,\ntime,\nmark,\naudio,\nvideo {\n  margin: 0;\n  padding: 0;\n  border: 0;\n  font-size: 100%;\n  font: inherit;\n  vertical-align: baseline;\n}\n/* HTML5 display-role reset for older browsers */\narticle,\naside,\ndetails,\nfigcaption,\nfigure,\nfooter,\nheader,\nhgroup,\nmenu,\nnav,\nsection {\n  display: block;\n}\nbody {\n  line-height: 1;\n}\nol,\nul {\n  list-style: none;\n}\nblockquote,\nq {\n  quotes: none;\n}\nblockquote:before,\nblockquote:after,\nq:before,\nq:after {\n  content: '';\n  content: none;\n}\ntable {\n  border-collapse: collapse;\n  border-spacing: 0;\n}\nbody {\n  width: 100%;\n}\n#source {\n  display: none;\n}\n#canvas-container {\n  position: relative;\n  margin: 0 auto;\n  margin-top: 100px;\n  text-align: center;\n  width: fit-content;\n}\n#canvas {\n  border: 2px dotted black;\n}\n#cached {\n  border: 2px dotted red;\n  left: 0;\n  top: 0;\n}\n#background-cached {\n  display: none;\n}\n", ""]);
+exports.push([module.i, "/* http://meyerweb.com/eric/tools/css/reset/ \n   v2.0 | 20110126\n   License: none (public domain)\n*/\nhtml,\nbody,\ndiv,\nspan,\napplet,\nobject,\niframe,\nh1,\nh2,\nh3,\nh4,\nh5,\nh6,\np,\nblockquote,\npre,\na,\nabbr,\nacronym,\naddress,\nbig,\ncite,\ncode,\ndel,\ndfn,\nem,\nimg,\nins,\nkbd,\nq,\ns,\nsamp,\nsmall,\nstrike,\nstrong,\nsub,\nsup,\ntt,\nvar,\nb,\nu,\ni,\ncenter,\ndl,\ndt,\ndd,\nol,\nul,\nli,\nfieldset,\nform,\nlabel,\nlegend,\ntable,\ncaption,\ntbody,\ntfoot,\nthead,\ntr,\nth,\ntd,\narticle,\naside,\ncanvas,\ndetails,\nembed,\nfigure,\nfigcaption,\nfooter,\nheader,\nhgroup,\nmenu,\nnav,\noutput,\nruby,\nsection,\nsummary,\ntime,\nmark,\naudio,\nvideo {\n  margin: 0;\n  padding: 0;\n  border: 0;\n  font-size: 100%;\n  font: inherit;\n  vertical-align: baseline;\n}\n/* HTML5 display-role reset for older browsers */\narticle,\naside,\ndetails,\nfigcaption,\nfigure,\nfooter,\nheader,\nhgroup,\nmenu,\nnav,\nsection {\n  display: block;\n}\nbody {\n  line-height: 1;\n}\nol,\nul {\n  list-style: none;\n}\nblockquote,\nq {\n  quotes: none;\n}\nblockquote:before,\nblockquote:after,\nq:before,\nq:after {\n  content: '';\n  content: none;\n}\ntable {\n  border-collapse: collapse;\n  border-spacing: 0;\n}\nbody {\n  width: 100%;\n}\n#source {\n  display: none;\n}\n#canvas-container {\n  position: relative;\n  margin: 0 auto;\n  margin-top: 100px;\n  text-align: center;\n  width: fit-content;\n}\n#canvas {\n  border: 2px dotted black;\n}\n#cached {\n  position: absolute;\n  border: 2px dotted red;\n  left: 0;\n  top: 0;\n}\n#background-cached {\n  display: none;\n}\n", ""]);
 
 // exports
 
