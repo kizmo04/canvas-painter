@@ -2926,10 +2926,15 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
   var styleValue = document.querySelector('#stroke-style-value');
   var deleteAll = document.querySelector('#delete-all');
 
-  deleteAll.addEventListener('pointerdown', function(e) {
+  deleteAll.addEventListener('pointerdown', async function(e) {
     e.preventDefault();
-    e.stopPropagation();
-    c.clearRect(0, 0, canvas.width, canvas.height);
+    // e.stopPropagation();
+    var canvasData = await canvasDataRef.child('path').once('value');
+    canvasData = canvasData.val();
+    console.log(canvasData)
+    for (var key in canvasData) {
+      canvasDataRef.child(`path/${key}`).remove();
+    }
   });
   // saveButton.setAttribute('href', dataUrl);
   // console.log(dataUrl)
