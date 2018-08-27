@@ -2901,7 +2901,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 (function() {
 
-  var backgroundCanvas = document.querySelector('#canvas');
+  var canvas = document.querySelector('#canvas');
   var drawingCanvas = document.querySelector('#cached');
   // var background = document.querySelector('#background-cached');
   var canvasConatinerWidth;
@@ -2910,7 +2910,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
   var image = document.querySelector('#source');
   image.crossOrigin = "Anonymous";
   // image.setAttribute('crossOrigin', '')
-  var c = backgroundCanvas.getContext('2d');
+  var c = canvas.getContext('2d');
   var d = drawingCanvas.getContext('2d');
   // var bg = background.getContext('2d');
   var imageData;
@@ -2918,9 +2918,72 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
   var drawings = {};
   var colorMenu = document.querySelector('#menu-container');
   var strokeColor;
+  var lineWidth;
+  var saveButton = document.querySelector('#save');
+  var styleMenu = document.querySelector('#stroke-style-menu-container');
+  var styleCanvas = document.querySelector('#stroke-style-view');
+  var s = styleCanvas.getContext('2d');
+  var styleValue = document.querySelector('#stroke-style-value');
+
+  // saveButton.setAttribute('href', dataUrl);
+  // console.log(dataUrl)
+  // saveButton.setAttribute('download', 'ddd.png');
+  var style = {
+    r: 0,
+    g: 0,
+    b: 0,
+    a: 1,
+    width: 5
+  };
+
+  s.beginPath();
+  s.strokeStyle = `rgba(${style.r}, ${style.g}, ${style.b}, ${style.a})`;
+  styleValue.textContent = `rgba(${style.r}, ${style.g}, ${style.b}, ${style.a}), line-width: ${style.width}`;
+  strokeColor = `rgba(${style.r}, ${style.g}, ${style.b}, ${style.a})`;
+  s.lineWidth = style.width;
+  lineWidth = style.width;
+  s.moveTo(50, 50);
+  s.lineTo(150, 50);
+  s.stroke();
+  s.closePath();
+
+  styleMenu.addEventListener('pointermove', function(e) {
+    if (Array.prototype.includes.call(e.target.classList, 'slider') && e.buttons === 1) {
+      if (e.x < 256 && e.x > 0) {
+        e.target.style.left = (e.x - 10) + 'px';
+        if (e.target.classList[1] === 'a') {
+          style[e.target.classList[1]] = (e.x / 255).toFixed(2);
+        } else {
+          style[e.target.classList[1]] = e.x.toFixed(0);
+        }
+        s.clearRect(0, 0, canvas.width, canvas.height);
+        s.beginPath();
+        s.strokeStyle = `rgba(${style.r}, ${style.g}, ${style.b}, ${style.a})`;
+        styleValue.textContent = `rgba(${style.r}, ${style.g}, ${style.b}, ${style.a}), line-width: ${style.width}`;
+        strokeColor = `rgba(${style.r}, ${style.g}, ${style.b}, ${style.a})`;
+        s.lineWidth = style.width;
+        lineWidth = style.width;
+        s.moveTo(50, 50);
+        s.lineTo(150, 50);
+        s.stroke();
+        s.closePath();
+      } else {
+        return;
+      }
+    }
+  });
+
+  saveButton.addEventListener('pointerdown', async function(e) {
+    var dataUrl = canvas.toDataURL();
+    e.preventDefault();
+    e.currentTarget.setAttribute('href', dataUrl);
+    e.currentTarget.setAttribute('download', 'untitled.png');
+    e.currentTarget.click();
+  });
 
   colorMenu.addEventListener('pointerdown', function(e) {
     strokeColor = e.target.classList[1];
+    mode = 1;
   });
 
 
@@ -2956,8 +3019,8 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
   function setPath (pathObj, obj) {
     var offsets = obj.offsets;
-    d.strokeStyle = obj.context.strokeStyle;
-    d.lineWidth = obj.context.lineWidth;
+    c.strokeStyle = obj.context.strokeStyle;
+    c.lineWidth = obj.context.lineWidth;
     for (var i = 0; i < offsets.length - 1; i++) {
       pathObj.moveTo(offsets[i].x, offsets[i].y);
       pathObj.lineTo(offsets[i + 1].x, offsets[i + 1].y);
@@ -2979,24 +3042,24 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
     // c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
     loadImage()
     .then(e => {
-      backgroundCanvas.width = e.target.naturalWidth;
-      backgroundCanvas.height = e.target.naturalHeight;
-      drawingCanvas.width = e.target.naturalWidth;
-      drawingCanvas.height = e.target.naturalHeight;
-      c.drawImage(e.target, 0, 0, e.target.naturalWidth, e.target.naturalHeight, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
-      canvasConatinerHeight = Math.min(400, backgroundCanvas.height);
+      canvas.width = e.target.naturalWidth;
+      canvas.height = e.target.naturalHeight;
+      canvas.width = e.target.naturalWidth;
+      canvas.height = e.target.naturalHeight;
+      c.drawImage(e.target, 0, 0, e.target.naturalWidth, e.target.naturalHeight, 0, 0, canvas.width, canvas.height);
+      canvasConatinerHeight = Math.min(400, canvas.height);
       canvasConatinerWidth = parseInt(canvasConatinerHeight * e.target.naturalWidth / e.target.naturalHeight);
     })
     .then(() => {
-      d.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+      // c.clearRect(0, 0, canvas.width, canvas.height);
       for (var key in canvasData.path) {
         var path = new Path2D();
-        d.beginPath();
+        c.beginPath();
         newLinePath = JSON.parse(canvasData.path[key]);
         path = setPath(path, newLinePath);
-        d.stroke(path);
+        c.stroke(path);
         drawings[key] = path;
-        d.closePath();
+        c.closePath();
       }
     })
     .catch(err => {
@@ -3011,19 +3074,19 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
     console.log('database on')
     canvasData = snapshot.val();
     // image.src = canvasData.img;
-    // c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
-    d.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+    c.clearRect(0, 0, canvas.width, canvas.height);
+    c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
     drawings = {};
     for (var key in canvasData) {
       // console.log(typeof JSON.parse(canvasData.path[key]));
       // var path = new Path2D(canvasData.path[key]);
       var path = new Path2D();
-      d.beginPath();
+      c.beginPath();
       newLinePath = JSON.parse(canvasData[key]);
       path = setPath(path, newLinePath);
-      d.stroke(path);
+      c.stroke(path);
       drawings[key] = path;
-      d.closePath();
+      c.closePath();
     }
     console.log('pathon done')
   });
@@ -3035,12 +3098,12 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
     // c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
     loadImage()
     .then(e => {
-      backgroundCanvas.width = e.target.naturalWidth;
-      backgroundCanvas.height = e.target.naturalHeight;
-      drawingCanvas.width = e.target.naturalWidth;
-      drawingCanvas.height = e.target.naturalHeight;
-      c.drawImage(e.target, 0, 0, e.target.naturalWidth, e.target.naturalHeight, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
-      canvasConatinerHeight = Math.min(400, backgroundCanvas.height);
+      canvas.width = e.target.naturalWidth;
+      canvas.height = e.target.naturalHeight;
+      canvas.width = e.target.naturalWidth;
+      canvas.height = e.target.naturalHeight;
+      c.drawImage(e.target, 0, 0, e.target.naturalWidth, e.target.naturalHeight, 0, 0, canvas.width, canvas.height);
+      canvasConatinerHeight = Math.min(400, canvas.height);
       canvasConatinerWidth = parseInt(canvasConatinerHeight * e.target.naturalWidth / e.target.naturalHeight);
     })
     .then(() => {
@@ -3049,15 +3112,15 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
         canvasData = snapshot.val();
         for (var key in canvasData) {
           var path = new Path2D();
-          d.beginPath();
+          c.beginPath();
           newLinePath = JSON.parse(canvasData[key]);
           path = setPath(path, newLinePath);
-          d.stroke(drawings[key]);
-          d.closePath();
+          c.stroke(drawings[key]);
+          c.closePath();
           drawings[key] = path;
         }
       })
-      // d.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+      // d.clearRect(0, 0, canvas.width, canvas.height);
     })
     .catch(err => {
       console.log(err);
@@ -3070,7 +3133,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
     });
   }
 
-  drawingCanvas.addEventListener('dragover', function(e) {
+  canvas.addEventListener('dragover', function(e) {
     e.preventDefault();
     // e.stopPropagation();
     e.dataTransfer.dropEffect = 'copy';
@@ -3078,7 +3141,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
   var pushImgData;
   var newLinePath;
-  drawingCanvas.addEventListener('drop', function(e) {
+  canvas.addEventListener('drop', function(e) {
     e.preventDefault();
     // e.stopPropagation();
     var reader = new FileReader();
@@ -3086,10 +3149,10 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       // canvasDataRef.set({img: reader.result});
       image.src = reader.result;
       canvasDataRef.update({ 'img': reader.result });
-      c.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+      // c.clearRect(0, 0, canvas.width, canvas.height);
       // cachedtx.clearRect(0, 0, canvas.width, canvas.height);
 
-      c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
+      // c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
       // cachedtx.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
       // prevImageData = c.getImageData(0, 0, canvas.width, canvas.height);
     }, false);
@@ -3097,7 +3160,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
     reader.readAsDataURL(e.dataTransfer.files[0]);
   });
 
-  canvas.addEventListener('wheel', __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.throttle(scrollHandler, 100));
+  // canvas.addEventListener('wheel', _.throttle(scrollHandler, 100));
 
   var zoomIn = 0.9;
   var zoomOut = 1.1;
@@ -3160,29 +3223,29 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
   var currentOffsetX, currentOffsetY;
   var newPathKey;
 
-  drawingCanvas.addEventListener('pointermove', function(e) {
+  canvas.addEventListener('pointermove', function(e) {
     console.log('move')
     if (mode === 0 && e.buttons === 1) {
-      c.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
-      moveX += e.movementX * Math.floor(1 * backgroundCanvas.width / canvasConatinerWidth);
-      moveY += e.movementY * Math.floor(1 * backgroundCanvas.height / canvasConatinerHeight);
+      c.clearRect(0, 0, canvas.width, canvas.height);
+      moveX += e.movementX * Math.floor(1 * canvas.width / canvasConatinerWidth);
+      moveY += e.movementY * Math.floor(1 * canvas.height / canvasConatinerHeight);
       if (wasZoomIn === 1) {
-        c.drawImage(image, sourceX - moveX, sourceY - moveY, width, height, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
+        c.drawImage(image, sourceX - moveX, sourceY - moveY, width, height, 0, 0, canvas.width, canvas.height);
       } else if (wasZoomIn === 2) {
-        c.drawImage(image, -sourceX - moveX, -sourceY - moveY, width, height, moveX, moveY, backgroundCanvas.width, backgroundCanvas.height);
+        c.drawImage(image, -sourceX - moveX, -sourceY - moveY, width, height, moveX, moveY, canvas.width, canvas.height);
       } else {
-        c.drawImage(image, -moveX, -moveY, image.naturalWidth, image.naturalHeight, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
+        c.drawImage(image, -moveX, -moveY, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
       }
       // _.forEach(drawings, path => {
       //   c.stroke(path);
       // });
       // prevImageData = c.getImageData(0, 0, canvas.width, canvas.height);
     } else if (mode === 1 && drawStart && e.buttons === 1) {
-      // currentOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * backgroundCanvas.width;
-      // currentOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * backgroundCanvas.height;
+      // currentOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * canvas.width;
+      // currentOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * canvas.height;
 
-      prevOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * backgroundCanvas.width;
-      prevOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * backgroundCanvas.height;
+      prevOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * canvas.width;
+      prevOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * canvas.height;
 
       // newDrawing.moveTo(prevOffsetX,prevOffsetY);
       // newDrawing.lineTo(currentOffsetX, currentOffsetY);
@@ -3194,7 +3257,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
         if (err) {
 
         } else {
-          console.log('update success!')
+          console.log('update success!');
         }
       });
       // drawings[newPathKey] = newDrawing;
@@ -3214,7 +3277,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       // prevOffsetY = currentOffsetY;
 
     } else if (mode === 1 && e.buttons === 2) {
-      imageData = c.getImageData(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+      imageData = c.getImageData(0, 0, canvas.width, canvas.height);
       data = imageData.data;
       // imageData.crossOrigin = 'Anonymous'; // trick으로 해결함..
       // console.log(imageData)
@@ -3248,7 +3311,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
   var newDrawing;
   var drawStart = false;
 
-  drawingCanvas.addEventListener('pointerdown', function(e) {
+  canvas.addEventListener('pointerdown', function(e) {
     if (mode === 1 && e.buttons === 1) {
       console.log('mousedown drawing')
       // cachedtx.save();
@@ -3258,19 +3321,19 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       drawStart = true;
       // console.log(newDrawing);
       // c.save();
-      d.beginPath();
-      // d.strokeStyle = 'green';
-      d.lineWidth = 10;
+      c.beginPath();
+      // c.strokeStyle = 'green';
+      // c.lineWidth = 5;
       newLinePath = new LinePath({
         strokeStyle: strokeColor,
-        lineWidth: 10
+        lineWidth: lineWidth
       });
       newPathKey = canvasDataRef.child('path').push().key;
       // cachedtx.beginPath();
       // cachedtx.strokeStyle = 'green';
       // cachedtx.lineWidth = 10;
-      prevOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * backgroundCanvas.width;
-      prevOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * backgroundCanvas.height;
+      prevOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * canvas.width;
+      prevOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * canvas.height;
       // newDrawing.moveTo(prevOffsetX,prevOffsetY);
       pushOffsets(newLinePath, prevOffsetX, prevOffsetY);
 
@@ -3282,12 +3345,12 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
   });
 
 
-  drawingCanvas.addEventListener('pointerup', function(e) {
+  canvas.addEventListener('pointerup', function(e) {
     if (mode === 1 && e.button === 0) {
       console.log('mouseup drawing', e.target);
       // c.stroke(newDrawing);
       // c.save();
-      d.closePath();
+      c.closePath();
       // cachedtx.closePath();
       // newPathKey = canvasDataRef.child('path').push().key;
       // var updates = {};
@@ -3308,7 +3371,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       // drawings = drawings.val();
 
       for (var key in drawings) {
-        if (d.isPointInStroke(drawings[key], (parseInt(e.offsetX) / canvasConatinerWidth) * drawingCanvas.width, (parseInt(e.offsetY) / canvasConatinerHeight) * drawingCanvas.height)) {
+        if (c.isPointInStroke(drawings[key], (parseInt(e.offsetX) / canvasConatinerWidth) * canvas.width, (parseInt(e.offsetY) / canvasConatinerHeight) * canvas.height)) {
           canvasDataRef.child(`path/${key}`).remove();
         }
       }
@@ -64901,7 +64964,7 @@ exports = module.exports = __webpack_require__(24)(false);
 
 
 // module
-exports.push([module.i, "/* http://meyerweb.com/eric/tools/css/reset/ \n   v2.0 | 20110126\n   License: none (public domain)\n*/\nhtml,\nbody,\ndiv,\nspan,\napplet,\nobject,\niframe,\nh1,\nh2,\nh3,\nh4,\nh5,\nh6,\np,\nblockquote,\npre,\na,\nabbr,\nacronym,\naddress,\nbig,\ncite,\ncode,\ndel,\ndfn,\nem,\nimg,\nins,\nkbd,\nq,\ns,\nsamp,\nsmall,\nstrike,\nstrong,\nsub,\nsup,\ntt,\nvar,\nb,\nu,\ni,\ncenter,\ndl,\ndt,\ndd,\nol,\nul,\nli,\nfieldset,\nform,\nlabel,\nlegend,\ntable,\ncaption,\ntbody,\ntfoot,\nthead,\ntr,\nth,\ntd,\narticle,\naside,\ncanvas,\ndetails,\nembed,\nfigure,\nfigcaption,\nfooter,\nheader,\nhgroup,\nmenu,\nnav,\noutput,\nruby,\nsection,\nsummary,\ntime,\nmark,\naudio,\nvideo {\n  margin: 0;\n  padding: 0;\n  border: 0;\n  font-size: 100%;\n  font: inherit;\n  vertical-align: baseline;\n}\n/* HTML5 display-role reset for older browsers */\narticle,\naside,\ndetails,\nfigcaption,\nfigure,\nfooter,\nheader,\nhgroup,\nmenu,\nnav,\nsection {\n  display: block;\n}\nbody {\n  line-height: 1;\n}\nol,\nul {\n  list-style: none;\n}\nblockquote,\nq {\n  quotes: none;\n}\nblockquote:before,\nblockquote:after,\nq:before,\nq:after {\n  content: '';\n  content: none;\n}\ntable {\n  border-collapse: collapse;\n  border-spacing: 0;\n}\nbody {\n  width: 100%;\n}\n#source {\n  display: none;\n}\n#canvas-container {\n  position: relative;\n  margin: 0 auto;\n  margin-top: 100px;\n  text-align: center;\n  width: fit-content;\n}\n#canvas {\n  border: 2px dotted black;\n  max-width: 800px;\n  max-height: 400px;\n}\n#cached {\n  position: absolute;\n  border: 2px dotted red;\n  left: 0;\n  top: 0;\n  max-width: 800px;\n  max-height: 400px;\n}\n#menu-container {\n  width: max-content;\n  margin: 0 auto;\n}\n.menu {\n  width: 50px;\n  height: 50px;\n  display: inline-block;\n  cursor: pointer;\n}\n.menu:nth-child(1) {\n  background-color: red;\n}\n.menu:nth-child(2) {\n  background-color: blue;\n}\n.menu:nth-child(3) {\n  background-color: green;\n}\n.menu:nth-child(4) {\n  background-color: yellow;\n}\n.menu:nth-child(5) {\n  background-color: black;\n}\n", ""]);
+exports.push([module.i, "/* http://meyerweb.com/eric/tools/css/reset/ \n   v2.0 | 20110126\n   License: none (public domain)\n*/\nhtml,\nbody,\ndiv,\nspan,\napplet,\nobject,\niframe,\nh1,\nh2,\nh3,\nh4,\nh5,\nh6,\np,\nblockquote,\npre,\na,\nabbr,\nacronym,\naddress,\nbig,\ncite,\ncode,\ndel,\ndfn,\nem,\nimg,\nins,\nkbd,\nq,\ns,\nsamp,\nsmall,\nstrike,\nstrong,\nsub,\nsup,\ntt,\nvar,\nb,\nu,\ni,\ncenter,\ndl,\ndt,\ndd,\nol,\nul,\nli,\nfieldset,\nform,\nlabel,\nlegend,\ntable,\ncaption,\ntbody,\ntfoot,\nthead,\ntr,\nth,\ntd,\narticle,\naside,\ncanvas,\ndetails,\nembed,\nfigure,\nfigcaption,\nfooter,\nheader,\nhgroup,\nmenu,\nnav,\noutput,\nruby,\nsection,\nsummary,\ntime,\nmark,\naudio,\nvideo {\n  margin: 0;\n  padding: 0;\n  border: 0;\n  font-size: 100%;\n  font: inherit;\n  vertical-align: baseline;\n  text-decoration: none;\n}\n/* HTML5 display-role reset for older browsers */\narticle,\naside,\ndetails,\nfigcaption,\nfigure,\nfooter,\nheader,\nhgroup,\nmenu,\nnav,\nsection {\n  display: block;\n}\nbody {\n  line-height: 1;\n}\nol,\nul {\n  list-style: none;\n}\nblockquote,\nq {\n  quotes: none;\n}\nblockquote:before,\nblockquote:after,\nq:before,\nq:after {\n  content: '';\n  content: none;\n}\ntable {\n  border-collapse: collapse;\n  border-spacing: 0;\n}\nbody {\n  width: 100%;\n}\n#source {\n  display: none;\n}\n#canvas-container {\n  position: relative;\n  margin: 0 auto;\n  margin-top: 100px;\n  text-align: center;\n  width: fit-content;\n}\n#canvas {\n  border: 2px dotted black;\n  max-width: 800px;\n  max-height: 400px;\n}\n#cached {\n  display: none;\n  position: absolute;\n  border: 2px dotted red;\n  left: 0;\n  top: 0;\n  max-width: 800px;\n  max-height: 400px;\n}\n#menu-container {\n  width: max-content;\n  margin: 0 auto;\n}\n.menu {\n  width: 50px;\n  height: 50px;\n  display: inline-block;\n  cursor: pointer;\n  vertical-align: middle;\n  text-align: center;\n}\n.menu:nth-child(1) {\n  background-color: red;\n}\n.menu:nth-child(2) {\n  background-color: blue;\n}\n.menu:nth-child(3) {\n  background-color: green;\n}\n.menu:nth-child(4) {\n  background-color: yellow;\n}\n.menu:nth-child(5) {\n  background-color: black;\n}\n#save {\n  font-size: 1.5em;\n  margin-top: 25%;\n  display: inline-block;\n}\n.stroke-style-menu {\n  position: relative;\n  border: 1px solid grey;\n  width: 255px;\n  height: 5px;\n  margin-bottom: 20px;\n}\n.slider {\n  position: absolute;\n  top: -150%;\n  width: 20px;\n  height: 20px;\n  background-color: grey;\n  border-radius: 2px;\n}\n.slider:nth-child(3) {\n  left: 255px;\n}\n.slider:nth-child(4) {\n  left: 10px;\n}\n:nth-child(3) {\n  left: 255px;\n}\n:nth-child(4) {\n  left: 10px;\n}\n#stroke-style-view {\n  width: 100px;\n  height: 100px;\n  border: 1px solid black;\n}\n", ""]);
 
 // exports
 
