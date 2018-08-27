@@ -142,7 +142,9 @@ import _ from 'lodash';
   userDataRef.once('value')
   .then(snapshot => {
     var idList = snapshot.val() || [];
+    idList = Object.values(idList);
     userId = idList.length ? idList[idList.length - 1] + 1 : 1;
+    console.log(idList[idList.length - 1])
     var key = userDataRef.push().key;
     var updates = {};
     updates[`${key}`] = userId;
