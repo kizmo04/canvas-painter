@@ -3009,12 +3009,14 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
   var database = firebase.database();
 
+  var userDataRef;
   var canvasDataRef;
   var canvasData;
 
   function LinePath (context, offsets) {
     this.offsets = offsets || [];
     this.context = context;
+    this.id = userId;
   }
 
   function setPath (pathObj, obj) {
@@ -3033,7 +3035,19 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
     return obj;
   }
 
+  var userId;
   canvasDataRef = database.ref('canvas');
+  userDataRef = database.ref('user');
+  userDataRef.once('value')
+  .then(snapshot => {
+    var idList = snapshot.val() || [];
+    userId = idList.length ? idList[idList.length - 1] + 1 : 1;
+    var key = userDataRef.push().key;
+    var updates = {};
+    updates[`${key}`] = userId;
+    userDataRef.update(updates);
+  })
+  .catch()
 
   canvasDataRef.once('value')
   .then(snapshot => {
@@ -3249,7 +3263,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
       // newDrawing.moveTo(prevOffsetX,prevOffsetY);
       // newDrawing.lineTo(currentOffsetX, currentOffsetY);
-      pushOffsets(newLinePath, prevOffsetX, prevOffsetY);
+      if (newLinePath.id === userId) pushOffsets(newLinePath, prevOffsetX, prevOffsetY);
       // console.log(newLinePath)
       var updates = {};
       updates[`/path/${newPathKey}`] = JSON.stringify(newLinePath);
@@ -3328,6 +3342,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
         strokeStyle: strokeColor,
         lineWidth: lineWidth
       });
+      newLinePath.id = userId;
       newPathKey = canvasDataRef.child('path').push().key;
       // cachedtx.beginPath();
       // cachedtx.strokeStyle = 'green';
