@@ -3177,6 +3177,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
   var pushImgData;
   var newLinePath;
+  var myLinePath;
   canvas.addEventListener('drop', function(e) {
     e.preventDefault();
     // e.stopPropagation();
@@ -3285,10 +3286,10 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
       // newDrawing.moveTo(prevOffsetX,prevOffsetY);
       // newDrawing.lineTo(currentOffsetX, currentOffsetY);
-      pushOffsets(newLinePath, prevOffsetX, prevOffsetY);
+      pushOffsets(myLinePath, prevOffsetX, prevOffsetY);
       // console.log(newLinePath)
       var updates = {};
-      updates[`/path/${userId}/${newPathKey}`] = JSON.stringify(newLinePath);
+      updates[`/path/${userId}/${newPathKey}`] = JSON.stringify(myLinePath);
       canvasDataRef.update(updates, function(err) {
         if (err) {
 
@@ -3360,11 +3361,11 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       c.beginPath();
       // c.strokeStyle = 'green';
       // c.lineWidth = 5;
-      newLinePath = new LinePath({
+      myLinePath = new LinePath({
         strokeStyle: strokeColor,
         lineWidth: lineWidth
       });
-      newLinePath.id = userId;
+      myLinePath.id = userId;
       newPathKey = canvasDataRef.child(`path/${userId}`).push().key;
       // cachedtx.beginPath();
       // cachedtx.strokeStyle = 'green';
@@ -3372,7 +3373,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       prevOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * canvas.width;
       prevOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * canvas.height;
       // newDrawing.moveTo(prevOffsetX,prevOffsetY);
-      pushOffsets(newLinePath, prevOffsetX, prevOffsetY);
+      pushOffsets(myLinePath, prevOffsetX, prevOffsetY);
 
       // drawings[newPathKey] = newLinePath;
 
