@@ -3079,14 +3079,17 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
     })
     .then(() => {
       // c.clearRect(0, 0, canvas.width, canvas.height);
-      for (var key in canvasData.path) {
-        var path = new Path2D();
-        c.beginPath();
-        newLinePath = JSON.parse(canvasData.path[key]);
-        path = setPath(path, newLinePath);
-        c.stroke(path);
-        drawings[key] = path;
-        c.closePath();
+      for (var id in canvasData.path) {
+        var pathList = canvasData.path[id];
+        for (var key in pathList) {
+          var path = new Path2D();
+          c.beginPath();
+          newLinePath = JSON.parse(pathList[key]);
+          path = setPath(path, newLinePath);
+          c.stroke(path);
+          drawings[key] = [path, newLinePath.id];
+          c.closePath();
+        }
       }
     })
     .catch(err => {
@@ -3104,16 +3107,19 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
     c.clearRect(0, 0, canvas.width, canvas.height);
     c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
     drawings = {};
-    for (var key in canvasData) {
+    for (var id in canvasData) {
       // console.log(typeof JSON.parse(canvasData.path[key]));
       // var path = new Path2D(canvasData.path[key]);
-      var path = new Path2D();
-      c.beginPath();
-      newLinePath = JSON.parse(canvasData[key]);
-      path = setPath(path, newLinePath);
-      c.stroke(path);
-      drawings[key] = path;
-      c.closePath();
+      var pathList = canvasData[id];
+      for (var key in pathList) {
+        var path = new Path2D();
+        c.beginPath();
+        newLinePath = JSON.parse(pathList[key]);
+        path = setPath(path, newLinePath);
+        c.stroke(path);
+        drawings[key] = [path, newLinePath.id];
+        c.closePath();
+      }
     }
     console.log('pathon done')
   });
@@ -3137,14 +3143,17 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       canvasDataRef.child('path').once('value')
       .then(snapshot => {
         canvasData = snapshot.val();
-        for (var key in canvasData) {
-          var path = new Path2D();
-          c.beginPath();
-          newLinePath = JSON.parse(canvasData[key]);
-          path = setPath(path, newLinePath);
-          c.stroke(drawings[key]);
-          c.closePath();
-          drawings[key] = path;
+        for (var id in canvasData) {
+          var pathList = canvasData[id];
+          for (var key in pathList) {
+            var path = new Path2D();
+            c.beginPath();
+            newLinePath = JSON.parse(pathList[key]);
+            path = setPath(path, newLinePath);
+            c.stroke(path);
+            drawings[key] = [path, newLinePath.id];
+            c.closePath();
+          }
         }
       })
       // d.clearRect(0, 0, canvas.width, canvas.height);
@@ -3276,10 +3285,10 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
       // newDrawing.moveTo(prevOffsetX,prevOffsetY);
       // newDrawing.lineTo(currentOffsetX, currentOffsetY);
-      if (newLinePath.id === userId) pushOffsets(newLinePath, prevOffsetX, prevOffsetY);
+      pushOffsets(newLinePath, prevOffsetX, prevOffsetY);
       // console.log(newLinePath)
       var updates = {};
-      updates[`/path/${newPathKey}`] = JSON.stringify(newLinePath);
+      updates[`/path/${userId}/${newPathKey}`] = JSON.stringify(newLinePath);
       canvasDataRef.update(updates, function(err) {
         if (err) {
 
@@ -3356,7 +3365,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
         lineWidth: lineWidth
       });
       newLinePath.id = userId;
-      newPathKey = canvasDataRef.child('path').push().key;
+      newPathKey = canvasDataRef.child(`path/${userId}`).push().key;
       // cachedtx.beginPath();
       // cachedtx.strokeStyle = 'green';
       // cachedtx.lineWidth = 10;
@@ -3364,6 +3373,8 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       prevOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * canvas.height;
       // newDrawing.moveTo(prevOffsetX,prevOffsetY);
       pushOffsets(newLinePath, prevOffsetX, prevOffsetY);
+
+      // drawings[newPathKey] = newLinePath;
 
       // drawings[newPathKey] = newDrawing;
       // console.log('canvas', e.offsetX, canvasConatinerWidth, canvas.width, image.width, image.naturalWidth)
@@ -3397,10 +3408,11 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
     } else if (mode === 2 && e.button === 0) {
       // drawings = await canvasDataRef.child('path').once('value');
       // drawings = drawings.val();
-
+      console.log(drawings)
       for (var key in drawings) {
-        if (c.isPointInStroke(drawings[key], (parseInt(e.offsetX) / canvasConatinerWidth) * canvas.width, (parseInt(e.offsetY) / canvasConatinerHeight) * canvas.height)) {
-          canvasDataRef.child(`path/${key}`).remove();
+        if (c.isPointInStroke(drawings[key][0], (parseInt(e.offsetX) / canvasConatinerWidth) * canvas.width, (parseInt(e.offsetY) / canvasConatinerHeight) * canvas.height)) {
+          var id = drawings[key][1];
+          canvasDataRef.child(`path/${id}/${key}`).remove();
         }
       }
       // console.log(drawings)
