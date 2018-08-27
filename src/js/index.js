@@ -25,7 +25,18 @@ import _ from 'lodash';
   var styleCanvas = document.querySelector('#stroke-style-view');
   var s = styleCanvas.getContext('2d');
   var styleValue = document.querySelector('#stroke-style-value');
+  var deleteAll = document.querySelector('#delete-all');
 
+  deleteAll.addEventListener('pointerdown', async function(e) {
+    e.preventDefault();
+    // e.stopPropagation();
+    var canvasData = await canvasDataRef.child('path').once('value');
+    canvasData = canvasData.val();
+    console.log(canvasData)
+    for (var key in canvasData) {
+      canvasDataRef.child(`path/${key}`).remove();
+    }
+  });
   // saveButton.setAttribute('href', dataUrl);
   // console.log(dataUrl)
   // saveButton.setAttribute('download', 'ddd.png');
