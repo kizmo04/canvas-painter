@@ -2,7 +2,7 @@ import _ from 'lodash';
 
 (function() {
 
-  var backgroundCanvas = document.querySelector('#canvas');
+  var canvas = document.querySelector('#canvas');
   var drawingCanvas = document.querySelector('#cached');
   // var background = document.querySelector('#background-cached');
   var canvasConatinerWidth;
@@ -11,7 +11,7 @@ import _ from 'lodash';
   var image = document.querySelector('#source');
   image.crossOrigin = "Anonymous";
   // image.setAttribute('crossOrigin', '')
-  var c = backgroundCanvas.getContext('2d');
+  var c = canvas.getContext('2d');
   var d = drawingCanvas.getContext('2d');
   // var bg = background.getContext('2d');
   var imageData;
@@ -19,9 +19,72 @@ import _ from 'lodash';
   var drawings = {};
   var colorMenu = document.querySelector('#menu-container');
   var strokeColor;
+  var lineWidth;
+  var saveButton = document.querySelector('#save');
+  var styleMenu = document.querySelector('#stroke-style-menu-container');
+  var styleCanvas = document.querySelector('#stroke-style-view');
+  var s = styleCanvas.getContext('2d');
+  var styleValue = document.querySelector('#stroke-style-value');
+
+  // saveButton.setAttribute('href', dataUrl);
+  // console.log(dataUrl)
+  // saveButton.setAttribute('download', 'ddd.png');
+  var style = {
+    r: 0,
+    g: 0,
+    b: 0,
+    a: 1,
+    width: 5
+  };
+
+  s.beginPath();
+  s.strokeStyle = `rgba(${style.r}, ${style.g}, ${style.b}, ${style.a})`;
+  styleValue.textContent = `rgba(${style.r}, ${style.g}, ${style.b}, ${style.a}), line-width: ${style.width}`;
+  strokeColor = `rgba(${style.r}, ${style.g}, ${style.b}, ${style.a})`;
+  s.lineWidth = style.width;
+  lineWidth = style.width;
+  s.moveTo(50, 50);
+  s.lineTo(150, 50);
+  s.stroke();
+  s.closePath();
+
+  styleMenu.addEventListener('pointermove', function(e) {
+    if (Array.prototype.includes.call(e.target.classList, 'slider') && e.buttons === 1) {
+      if (e.x < 256 && e.x > 0) {
+        e.target.style.left = (e.x - 10) + 'px';
+        if (e.target.classList[1] === 'a') {
+          style[e.target.classList[1]] = (e.x / 255).toFixed(2);
+        } else {
+          style[e.target.classList[1]] = e.x.toFixed(0);
+        }
+        s.clearRect(0, 0, canvas.width, canvas.height);
+        s.beginPath();
+        s.strokeStyle = `rgba(${style.r}, ${style.g}, ${style.b}, ${style.a})`;
+        styleValue.textContent = `rgba(${style.r}, ${style.g}, ${style.b}, ${style.a}), line-width: ${style.width}`;
+        strokeColor = `rgba(${style.r}, ${style.g}, ${style.b}, ${style.a})`;
+        s.lineWidth = style.width;
+        lineWidth = style.width;
+        s.moveTo(50, 50);
+        s.lineTo(150, 50);
+        s.stroke();
+        s.closePath();
+      } else {
+        return;
+      }
+    }
+  });
+
+  saveButton.addEventListener('pointerdown', async function(e) {
+    var dataUrl = canvas.toDataURL();
+    e.preventDefault();
+    e.currentTarget.setAttribute('href', dataUrl);
+    e.currentTarget.setAttribute('download', 'untitled.png');
+    e.currentTarget.click();
+  });
 
   colorMenu.addEventListener('pointerdown', function(e) {
     strokeColor = e.target.classList[1];
+    mode = 1;
   });
 
 
@@ -47,18 +110,20 @@ import _ from 'lodash';
 
   var database = firebase.database();
 
+  var userDataRef;
   var canvasDataRef;
   var canvasData;
 
   function LinePath (context, offsets) {
     this.offsets = offsets || [];
     this.context = context;
+    this.id = userId;
   }
 
   function setPath (pathObj, obj) {
     var offsets = obj.offsets;
-    d.strokeStyle = obj.context.strokeStyle;
-    d.lineWidth = obj.context.lineWidth;
+    c.strokeStyle = obj.context.strokeStyle;
+    c.lineWidth = obj.context.lineWidth;
     for (var i = 0; i < offsets.length - 1; i++) {
       pathObj.moveTo(offsets[i].x, offsets[i].y);
       pathObj.lineTo(offsets[i + 1].x, offsets[i + 1].y);
@@ -71,7 +136,19 @@ import _ from 'lodash';
     return obj;
   }
 
+  var userId;
   canvasDataRef = database.ref('canvas');
+  userDataRef = database.ref('user');
+  userDataRef.once('value')
+  .then(snapshot => {
+    var idList = snapshot.val() || [];
+    userId = idList.length ? idList[idList.length - 1] + 1 : 1;
+    var key = userDataRef.push().key;
+    var updates = {};
+    updates[`${key}`] = userId;
+    userDataRef.update(updates);
+  })
+  .catch()
 
   canvasDataRef.once('value')
   .then(snapshot => {
@@ -80,24 +157,24 @@ import _ from 'lodash';
     // c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
     loadImage()
     .then(e => {
-      backgroundCanvas.width = e.target.naturalWidth;
-      backgroundCanvas.height = e.target.naturalHeight;
-      drawingCanvas.width = e.target.naturalWidth;
-      drawingCanvas.height = e.target.naturalHeight;
-      c.drawImage(e.target, 0, 0, e.target.naturalWidth, e.target.naturalHeight, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
-      canvasConatinerHeight = Math.min(400, backgroundCanvas.height);
+      canvas.width = e.target.naturalWidth;
+      canvas.height = e.target.naturalHeight;
+      canvas.width = e.target.naturalWidth;
+      canvas.height = e.target.naturalHeight;
+      c.drawImage(e.target, 0, 0, e.target.naturalWidth, e.target.naturalHeight, 0, 0, canvas.width, canvas.height);
+      canvasConatinerHeight = Math.min(400, canvas.height);
       canvasConatinerWidth = parseInt(canvasConatinerHeight * e.target.naturalWidth / e.target.naturalHeight);
     })
     .then(() => {
-      d.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+      // c.clearRect(0, 0, canvas.width, canvas.height);
       for (var key in canvasData.path) {
         var path = new Path2D();
-        d.beginPath();
+        c.beginPath();
         newLinePath = JSON.parse(canvasData.path[key]);
         path = setPath(path, newLinePath);
-        d.stroke(path);
+        c.stroke(path);
         drawings[key] = path;
-        d.closePath();
+        c.closePath();
       }
     })
     .catch(err => {
@@ -112,19 +189,19 @@ import _ from 'lodash';
     console.log('database on')
     canvasData = snapshot.val();
     // image.src = canvasData.img;
-    // c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
-    d.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+    c.clearRect(0, 0, canvas.width, canvas.height);
+    c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
     drawings = {};
     for (var key in canvasData) {
       // console.log(typeof JSON.parse(canvasData.path[key]));
       // var path = new Path2D(canvasData.path[key]);
       var path = new Path2D();
-      d.beginPath();
+      c.beginPath();
       newLinePath = JSON.parse(canvasData[key]);
       path = setPath(path, newLinePath);
-      d.stroke(path);
+      c.stroke(path);
       drawings[key] = path;
-      d.closePath();
+      c.closePath();
     }
     console.log('pathon done')
   });
@@ -136,12 +213,12 @@ import _ from 'lodash';
     // c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
     loadImage()
     .then(e => {
-      backgroundCanvas.width = e.target.naturalWidth;
-      backgroundCanvas.height = e.target.naturalHeight;
-      drawingCanvas.width = e.target.naturalWidth;
-      drawingCanvas.height = e.target.naturalHeight;
-      c.drawImage(e.target, 0, 0, e.target.naturalWidth, e.target.naturalHeight, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
-      canvasConatinerHeight = Math.min(400, backgroundCanvas.height);
+      canvas.width = e.target.naturalWidth;
+      canvas.height = e.target.naturalHeight;
+      canvas.width = e.target.naturalWidth;
+      canvas.height = e.target.naturalHeight;
+      c.drawImage(e.target, 0, 0, e.target.naturalWidth, e.target.naturalHeight, 0, 0, canvas.width, canvas.height);
+      canvasConatinerHeight = Math.min(400, canvas.height);
       canvasConatinerWidth = parseInt(canvasConatinerHeight * e.target.naturalWidth / e.target.naturalHeight);
     })
     .then(() => {
@@ -150,15 +227,15 @@ import _ from 'lodash';
         canvasData = snapshot.val();
         for (var key in canvasData) {
           var path = new Path2D();
-          d.beginPath();
+          c.beginPath();
           newLinePath = JSON.parse(canvasData[key]);
           path = setPath(path, newLinePath);
-          d.stroke(drawings[key]);
-          d.closePath();
+          c.stroke(drawings[key]);
+          c.closePath();
           drawings[key] = path;
         }
       })
-      // d.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+      // d.clearRect(0, 0, canvas.width, canvas.height);
     })
     .catch(err => {
       console.log(err);
@@ -171,7 +248,7 @@ import _ from 'lodash';
     });
   }
 
-  drawingCanvas.addEventListener('dragover', function(e) {
+  canvas.addEventListener('dragover', function(e) {
     e.preventDefault();
     // e.stopPropagation();
     e.dataTransfer.dropEffect = 'copy';
@@ -179,7 +256,7 @@ import _ from 'lodash';
 
   var pushImgData;
   var newLinePath;
-  drawingCanvas.addEventListener('drop', function(e) {
+  canvas.addEventListener('drop', function(e) {
     e.preventDefault();
     // e.stopPropagation();
     var reader = new FileReader();
@@ -187,10 +264,10 @@ import _ from 'lodash';
       // canvasDataRef.set({img: reader.result});
       image.src = reader.result;
       canvasDataRef.update({ 'img': reader.result });
-      c.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+      // c.clearRect(0, 0, canvas.width, canvas.height);
       // cachedtx.clearRect(0, 0, canvas.width, canvas.height);
 
-      c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
+      // c.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
       // cachedtx.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
       // prevImageData = c.getImageData(0, 0, canvas.width, canvas.height);
     }, false);
@@ -198,7 +275,7 @@ import _ from 'lodash';
     reader.readAsDataURL(e.dataTransfer.files[0]);
   });
 
-  canvas.addEventListener('wheel', _.throttle(scrollHandler, 100));
+  // canvas.addEventListener('wheel', _.throttle(scrollHandler, 100));
 
   var zoomIn = 0.9;
   var zoomOut = 1.1;
@@ -261,33 +338,33 @@ import _ from 'lodash';
   var currentOffsetX, currentOffsetY;
   var newPathKey;
 
-  drawingCanvas.addEventListener('pointermove', function(e) {
+  canvas.addEventListener('pointermove', function(e) {
     console.log('move')
     if (mode === 0 && e.buttons === 1) {
-      c.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
-      moveX += e.movementX * Math.floor(1 * backgroundCanvas.width / canvasConatinerWidth);
-      moveY += e.movementY * Math.floor(1 * backgroundCanvas.height / canvasConatinerHeight);
+      c.clearRect(0, 0, canvas.width, canvas.height);
+      moveX += e.movementX * Math.floor(1 * canvas.width / canvasConatinerWidth);
+      moveY += e.movementY * Math.floor(1 * canvas.height / canvasConatinerHeight);
       if (wasZoomIn === 1) {
-        c.drawImage(image, sourceX - moveX, sourceY - moveY, width, height, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
+        c.drawImage(image, sourceX - moveX, sourceY - moveY, width, height, 0, 0, canvas.width, canvas.height);
       } else if (wasZoomIn === 2) {
-        c.drawImage(image, -sourceX - moveX, -sourceY - moveY, width, height, moveX, moveY, backgroundCanvas.width, backgroundCanvas.height);
+        c.drawImage(image, -sourceX - moveX, -sourceY - moveY, width, height, moveX, moveY, canvas.width, canvas.height);
       } else {
-        c.drawImage(image, -moveX, -moveY, image.naturalWidth, image.naturalHeight, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
+        c.drawImage(image, -moveX, -moveY, image.naturalWidth, image.naturalHeight, 0, 0, canvas.width, canvas.height);
       }
       // _.forEach(drawings, path => {
       //   c.stroke(path);
       // });
       // prevImageData = c.getImageData(0, 0, canvas.width, canvas.height);
     } else if (mode === 1 && drawStart && e.buttons === 1) {
-      // currentOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * backgroundCanvas.width;
-      // currentOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * backgroundCanvas.height;
+      // currentOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * canvas.width;
+      // currentOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * canvas.height;
 
-      prevOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * backgroundCanvas.width;
-      prevOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * backgroundCanvas.height;
+      prevOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * canvas.width;
+      prevOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * canvas.height;
 
       // newDrawing.moveTo(prevOffsetX,prevOffsetY);
       // newDrawing.lineTo(currentOffsetX, currentOffsetY);
-      pushOffsets(newLinePath, prevOffsetX, prevOffsetY);
+      if (newLinePath.id === userId) pushOffsets(newLinePath, prevOffsetX, prevOffsetY);
       // console.log(newLinePath)
       var updates = {};
       updates[`/path/${newPathKey}`] = JSON.stringify(newLinePath);
@@ -295,7 +372,7 @@ import _ from 'lodash';
         if (err) {
 
         } else {
-          console.log('update success!')
+          console.log('update success!');
         }
       });
       // drawings[newPathKey] = newDrawing;
@@ -315,7 +392,7 @@ import _ from 'lodash';
       // prevOffsetY = currentOffsetY;
 
     } else if (mode === 1 && e.buttons === 2) {
-      imageData = c.getImageData(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+      imageData = c.getImageData(0, 0, canvas.width, canvas.height);
       data = imageData.data;
       // imageData.crossOrigin = 'Anonymous'; // trick으로 해결함..
       // console.log(imageData)
@@ -349,7 +426,7 @@ import _ from 'lodash';
   var newDrawing;
   var drawStart = false;
 
-  drawingCanvas.addEventListener('pointerdown', function(e) {
+  canvas.addEventListener('pointerdown', function(e) {
     if (mode === 1 && e.buttons === 1) {
       console.log('mousedown drawing')
       // cachedtx.save();
@@ -359,19 +436,20 @@ import _ from 'lodash';
       drawStart = true;
       // console.log(newDrawing);
       // c.save();
-      d.beginPath();
-      // d.strokeStyle = 'green';
-      d.lineWidth = 10;
+      c.beginPath();
+      // c.strokeStyle = 'green';
+      // c.lineWidth = 5;
       newLinePath = new LinePath({
         strokeStyle: strokeColor,
-        lineWidth: 10
+        lineWidth: lineWidth
       });
+      newLinePath.id = userId;
       newPathKey = canvasDataRef.child('path').push().key;
       // cachedtx.beginPath();
       // cachedtx.strokeStyle = 'green';
       // cachedtx.lineWidth = 10;
-      prevOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * backgroundCanvas.width;
-      prevOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * backgroundCanvas.height;
+      prevOffsetX = (parseInt(e.offsetX) / canvasConatinerWidth) * canvas.width;
+      prevOffsetY = (parseInt(e.offsetY) / canvasConatinerHeight) * canvas.height;
       // newDrawing.moveTo(prevOffsetX,prevOffsetY);
       pushOffsets(newLinePath, prevOffsetX, prevOffsetY);
 
@@ -383,12 +461,12 @@ import _ from 'lodash';
   });
 
 
-  drawingCanvas.addEventListener('pointerup', function(e) {
+  canvas.addEventListener('pointerup', function(e) {
     if (mode === 1 && e.button === 0) {
       console.log('mouseup drawing', e.target);
       // c.stroke(newDrawing);
       // c.save();
-      d.closePath();
+      c.closePath();
       // cachedtx.closePath();
       // newPathKey = canvasDataRef.child('path').push().key;
       // var updates = {};
@@ -409,7 +487,7 @@ import _ from 'lodash';
       // drawings = drawings.val();
 
       for (var key in drawings) {
-        if (d.isPointInStroke(drawings[key], (parseInt(e.offsetX) / canvasConatinerWidth) * drawingCanvas.width, (parseInt(e.offsetY) / canvasConatinerHeight) * drawingCanvas.height)) {
+        if (c.isPointInStroke(drawings[key], (parseInt(e.offsetX) / canvasConatinerWidth) * canvas.width, (parseInt(e.offsetY) / canvasConatinerHeight) * canvas.height)) {
           canvasDataRef.child(`path/${key}`).remove();
         }
       }

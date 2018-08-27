@@ -21,7 +21,8 @@ time, mark, audio, video {
 	border: 0;
 	font-size: 100%;
 	font: inherit;
-	vertical-align: baseline;
+  vertical-align: baseline;
+  text-decoration: none;
 }
 /* HTML5 display-role reset for older browsers */
 article, aside, details, figcaption, figure, 
@@ -78,6 +79,7 @@ body {
 }
 
 #cached {
+  display: none;
   position: absolute;
   // display: none;
   border: 2px dotted red;
@@ -97,6 +99,8 @@ body {
   height: 50px;
   display: inline-block;
   cursor: pointer;
+  vertical-align: middle;
+  text-align: center;
 
   &:nth-child(1) {
     background-color: red;
@@ -113,4 +117,46 @@ body {
   &:nth-child(5) {
     background-color: black;
   }
+  &:nth-child(6) {
+    // border: 1px solid grey;
+  }
+}
+
+#save {
+  font-size: 1.5em;
+  margin-top: 25%;
+  // vertical-align: baseline;
+  display: inline-block;
+  // border: 1px solid grey;
+}
+
+.stroke-style-menu {
+  position: relative;
+  border: 1px solid grey;
+  width: 255px;
+  height: 5px;
+  margin-bottom: 20px;
+
+}
+
+.slider {
+  position: absolute;
+  top: -150%;
+  width: 20px;
+  height: 20px;
+  background-color: grey;
+  border-radius: 2px;
+}
+
+.a {
+  left: 255px;
+}
+.width {
+  left: 10px;
+}
+
+#stroke-style-view {
+  width: 100px;
+  height: 100px;
+  border: 1px solid black;
 }
